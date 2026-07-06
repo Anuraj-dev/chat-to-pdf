@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<style>
+body{margin:0;background:#EDEAE3;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:#1A5C9C;text-decoration:none}a:hover{color:#124577;text-decoration:underline}
+.dv-turn{padding:44px 48px 36px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 6px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1F2933;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 15px/1.2 system-ui,sans-serif;color:#1F2933}
+.dv-sub{font:400 12.5px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.55);max-width:720px;margin:0 0 22px}
+.dv-opts{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1F2933;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-opt:target .dv-oid{background:#1A5C9C;color:#fff}
+@keyframes cdfspin{to{transform:rotate(360deg)}}
+@keyframes cdfbar{0%{width:8%}60%{width:74%}100%{width:92%}}
+</style>
+</helmet>
+
+<section class="dv-turn" id="t1" data-screen-label="CDF UI — Design system + all screens">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">CDF — copy an AI answer, get a clean printable PDF</span></div>
+<p class="dv-sub">Design system first (<a class="dv-oid" href="#1a">1a</a>), then every screen: onboarding <a class="dv-oid" href="#1b">1b</a>, home/capture <a class="dv-oid" href="#1c">1c</a>, processing <a class="dv-oid" href="#1d">1d</a>, PDF preview <a class="dv-oid" href="#1e">1e</a>, history <a class="dv-oid" href="#1f">1f</a>, edge &amp; error states <a class="dv-oid" href="#1g">1g</a>. Aesthetic: calm government-grade utility — warm paper neutrals, one trust-blue accent, a green reserved for "ready to print". Everything offline, no account, nothing implying data leaves the phone.</p>
+<div class="dv-opts">
+
+<!-- ═══════════ 1a DESIGN SYSTEM ═══════════ -->
+<div class="dv-opt" id="1a" data-screen-label="1a Design system">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Design system — tokens &amp; components</div>
+<div style="width:840px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);padding:28px;display:flex;flex-direction:column;gap:26px">
+
+  <!-- palette -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0">PALETTE · LIGHT (PRIMARY)</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#F7F5F0;border:1px solid #E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Paper</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#F7F5F0</div></div>
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#FFFFFF;border:1px solid #E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Card</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#FFFFFF</div></div>
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#1F2933"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Ink</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#1F2933</div></div>
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#55606B"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Ink-soft</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#55606B</div></div>
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#1A5C9C"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Trust blue</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#1A5C9C</div></div>
+      <div style="width:118px"><div style="height:56px;border-radius:8px;background:#0E7B47"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Print green</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#0E7B47</div></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#218358"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Success</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#218358</div></div>
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#B3362B"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Error</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#B3362B</div></div>
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#E9F1F9;border:1px solid #E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Blue tint</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#E9F1F9</div></div>
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#E7F4EC;border:1px solid #E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Green tint</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#E7F4EC</div></div>
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#FBEBE9;border:1px solid #E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Error tint</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#FBEBE9</div></div>
+      <div style="width:118px"><div style="height:36px;border-radius:8px;background:#E3DFD6"></div><div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Line</div><div style="font:11px ui-monospace,monospace;color:#8A94A0">#E3DFD6</div></div>
+    </div>
+    <div style="font:italic 12px/1.5 system-ui;color:#55606B">Warm paper neutrals read calmly in sunlight on cheap LCDs; one deep blue signals "official and reliable"; green is used <b>only</b> when a PDF is ready to print — the user learns green = go. Saturated colors never fill large areas.</div>
+  </div>
+
+  <!-- type -->
+  <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid #EFECE5;padding-top:22px">
+    <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0">TYPE SCALE · system stack: Roboto / system-ui (zero download, renders instantly on any Android)</div>
+    <div style="display:grid;grid-template-columns:150px 1fr;row-gap:10px;align-items:baseline">
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Display 30/36 · 700</div><div style="font:700 30px/36px Roboto,system-ui;color:#1F2933">Turn answers into PDFs</div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Title 22/28 · 600</div><div style="font:600 22px/28px Roboto,system-ui;color:#1F2933">Your PDF is ready</div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Body 17/26 · 400</div><div style="font:400 17px/26px Roboto,system-ui;color:#1F2933">Paste an answer you copied from ChatGPT or Gemini.</div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Body-small 15/22</div><div style="font:400 15px/22px Roboto,system-ui;color:#55606B">2 pages · Yesterday, 4:12 pm</div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Button 17/24 · 600</div><div style="font:600 17px/24px Roboto,system-ui;color:#1A5C9C">Make PDF</div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">Caption 12.5/18</div><div style="font:400 12.5px/18px Roboto,system-ui;color:#8A94A0">Everything stays on your phone</div>
+    </div>
+    <div style="font:italic 12px/1.5 system-ui;color:#55606B">Body is 17 px — a step larger than typical — because the persona reads in sunlight on a low-density screen. Only two weights (400/600–700), so hierarchy survives cheap font rendering.</div>
+  </div>
+
+  <!-- spacing / radius / elevation / icons -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;border-top:1px solid #EFECE5;padding-top:22px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0">SPACING · 4-BASE</div>
+      <div style="display:flex;align-items:flex-end;gap:8px">
+        <div style="width:4px;height:16px;background:#1A5C9C;border-radius:2px"></div><div style="width:8px;height:16px;background:#1A5C9C;border-radius:2px"></div><div style="width:12px;height:16px;background:#1A5C9C;border-radius:2px"></div><div style="width:16px;height:16px;background:#1A5C9C;border-radius:2px"></div><div style="width:24px;height:16px;background:#1A5C9C;border-radius:2px"></div><div style="width:32px;height:16px;background:#1A5C9C;border-radius:2px"></div>
+        <div style="font:11px ui-monospace,monospace;color:#8A94A0;margin-left:6px">4 · 8 · 12 · 16 · 24 · 32</div>
+      </div>
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0;margin-top:10px">RADIUS</div>
+      <div style="display:flex;gap:10px;align-items:flex-end">
+        <div style="width:52px;height:36px;border:2px solid #55606B;border-radius:8px;display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#55606B">8</div>
+        <div style="width:52px;height:36px;border:2px solid #55606B;border-radius:12px;display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#55606B">12</div>
+        <div style="width:52px;height:36px;border:2px solid #55606B;border-radius:16px;display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#55606B">16</div>
+        <div style="font:11px/1.4 ui-monospace,monospace;color:#8A94A0">chips · buttons/cards · sheets &amp; paste box</div>
+      </div>
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0;margin-top:10px">ELEVATION</div>
+      <div style="display:flex;gap:10px">
+        <div style="width:110px;height:44px;background:#fff;border:1px solid #E3DFD6;border-radius:12px;display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#8A94A0">e0 · border</div>
+        <div style="width:110px;height:44px;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(31,41,51,.12);display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#8A94A0">e1 · card</div>
+        <div style="width:110px;height:44px;background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(31,41,51,.18);display:flex;align-items:center;justify-content:center;font:11px ui-monospace,monospace;color:#8A94A0">e2 · sheet</div>
+      </div>
+      <div style="font:italic 12px/1.5 system-ui;color:#55606B;margin-top:4px">Borders over shadows: heavy shadows band and smear on budget LCD panels. Only floating sheets get real depth.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0">ICON STYLE · outlined, 2px stroke, geometric</div>
+      <div style="display:flex;gap:14px;align-items:center">
+        <div style="width:44px;height:44px;border-radius:12px;background:#F7F5F0;display:flex;align-items:center;justify-content:center"><div style="width:16px;height:20px;border:2px solid #1F2933;border-radius:2px"></div></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:#F7F5F0;display:flex;align-items:center;justify-content:center"><div style="width:20px;height:20px;border:2px solid #1F2933;border-radius:50%"></div></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:#F7F5F0;display:flex;align-items:center;justify-content:center"><div style="width:12px;height:12px;border-right:2.5px solid #1F2933;border-bottom:2.5px solid #1F2933;transform:rotate(-45deg) translateY(-2px)"></div></div>
+        <div style="width:44px;height:44px;border-radius:12px;background:#E7F4EC;display:flex;align-items:center;justify-content:center"><div style="width:14px;height:8px;border-left:2.5px solid #0E7B47;border-bottom:2.5px solid #0E7B47;transform:rotate(-45deg) translateY(-2px)"></div></div>
+      </div>
+      <div style="font:italic 12px/1.5 system-ui;color:#55606B">Simple outlined glyphs stay crisp at low DPI; filled icons clog. Every icon ships with a text label — the persona should never have to guess a symbol.</div>
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0;margin-top:10px">TAP TARGETS</div>
+      <div style="font:12.5px/1.5 system-ui;color:#55606B">Minimum 48 dp everywhere; the primary button is 56 dp and always lives in the bottom third of the screen, full-width, reachable with the right thumb.</div>
+      <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0;margin-top:10px">DARK VARIANT (quick)</div>
+      <div style="display:flex;gap:8px">
+        <div style="width:64px;height:32px;border-radius:8px;background:#15191E"></div>
+        <div style="width:64px;height:32px;border-radius:8px;background:#1E242B"></div>
+        <div style="width:64px;height:32px;border-radius:8px;background:#5E96CC"></div>
+        <div style="width:64px;height:32px;border-radius:8px;background:#4CAF7E"></div>
+      </div>
+      <div style="font:11px ui-monospace,monospace;color:#8A94A0">bg #15191E · card #1E242B · blue #5E96CC · green #4CAF7E</div>
+    </div>
+  </div>
+
+  <!-- components -->
+  <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #EFECE5;padding-top:22px">
+    <div style="font:700 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;color:#8A94A0">COMPONENTS · ALL STATES</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+      <!-- buttons -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:600 12px system-ui;color:#1F2933">Primary button (56 dp)</div>
+        <div style="height:56px;border-radius:12px;background:#1A5C9C;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui">Make PDF</div>
+        <div style="height:56px;border-radius:12px;background:#124577;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui">Make PDF <span style="font:400 11px ui-monospace,monospace;opacity:.7;margin-left:8px">pressed</span></div>
+        <div style="height:56px;border-radius:12px;background:#DDD9D0;color:#9AA2AB;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui">Make PDF <span style="font:400 11px ui-monospace,monospace;margin-left:8px">disabled</span></div>
+        <div style="height:56px;border-radius:12px;background:#1A5C9C;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px;font:600 17px Roboto,system-ui"><span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:cdfspin 1s linear infinite"></span>Making PDF…</div>
+        <div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">Print button (green, preview only) &amp; secondary</div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;height:56px;border-radius:12px;background:#0E7B47;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui">Print</div>
+          <div style="flex:1;height:56px;border-radius:12px;background:#fff;border:1.5px solid #C9CFD6;color:#1F2933;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui">Save</div>
+        </div>
+      </div>
+      <!-- input + card + list item -->
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="font:600 12px system-ui;color:#1F2933">Paste box — default / focused / error</div>
+        <div style="border:1.5px solid #E3DFD6;border-radius:16px;background:#fff;padding:14px 16px;font:400 15px/22px Roboto,system-ui;color:#8A94A0">Paste an answer you copied…</div>
+        <div style="border:2px solid #1A5C9C;border-radius:16px;background:#fff;padding:14px 16px;font:400 15px/22px Roboto,system-ui;color:#1F2933">Solve for x: 2x² + 5x − 3 = 0…<span style="border-left:2px solid #1A5C9C;margin-left:1px"></span></div>
+        <div>
+          <div style="border:2px solid #B3362B;border-radius:16px;background:#fff;padding:14px 16px;font:400 15px/22px Roboto,system-ui;color:#8A94A0">Paste an answer you copied…</div>
+          <div style="font:400 12.5px/18px Roboto,system-ui;color:#B3362B;margin:6px 4px 0">Paste some text first — tap and hold the box, then tap Paste.</div>
+        </div>
+        <div style="font:600 12px system-ui;color:#1F2933;margin-top:6px">List item — default / pressed</div>
+        <div style="background:#fff;border:1px solid #E3DFD6;border-radius:12px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px">
+            <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+            <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Quadratic equations — roots</div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">2 pages · Yesterday, 4:12 pm</div></div>
+            <div style="width:10px;height:10px;border-right:2px solid #8A94A0;border-bottom:2px solid #8A94A0;transform:rotate(-45deg)"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px;background:#EFECE5">
+            <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex-shrink:0;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+            <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933">Photosynthesis notes <span style="font:400 11px ui-monospace,monospace;color:#8A94A0">pressed</span></div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">1 page · 2 Jul</div></div>
+            <div style="width:10px;height:10px;border-right:2px solid #8A94A0;border-bottom:2px solid #8A94A0;transform:rotate(-45deg)"></div>
+          </div>
+        </div>
+        <div style="font:italic 12px/1.5 system-ui;color:#55606B">Pressed = darker fill, no ripple animation — instant feedback that still reads on a slow 60 Hz panel.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════ 1b ONBOARDING ═══════════ -->
+<div class="dv-opt" id="1b" data-screen-label="1b First-run onboarding">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>First-run — one screen, no carousel</div>
+<div style="display:flex;gap:20px;align-items:flex-start">
+<sc-if value="{{ showWireframes }}" hint-placeholder-val="{{ true }}">
+  <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:6px">
+    <div style="height:352px;background:#fff;border:1.5px solid #B7B2A6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font:9px ui-monospace,monospace;color:#8A8478">
+      <div style="flex:1"></div>
+      <div style="width:36px;height:36px;border:1.5px dashed #B7B2A6;border-radius:8px;align-self:center;display:flex;align-items:center;justify-content:center">icon</div>
+      <div style="height:34px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center">headline ×2 lines</div>
+      <div style="height:26px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center">1-sentence promise</div>
+      <div style="height:52px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center">3 reassurance rows<br>(offline / no account / clean math)</div>
+      <div style="flex:1"></div>
+      <div style="height:30px;border:1.5px solid #8A8478;border-radius:8px;display:flex;align-items:center;justify-content:center">START — bottom third</div>
+    </div>
+    <div style="font:9.5px ui-monospace,monospace;color:#8A8478;text-align:center">wireframe</div>
+  </div>
+</sc-if>
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:24px 24px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="flex:1.2"></div>
+    <div style="width:76px;height:76px;border-radius:20px;background:#E9F1F9;display:flex;align-items:center;justify-content:center;align-self:flex-start">
+      <div style="width:34px;height:44px;background:#fff;border:2.5px solid #1A5C9C;border-radius:3px;position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:5px"><div style="position:absolute;top:-2.5px;right:-2.5px;width:12px;height:12px;background:#E9F1F9;border-left:2.5px solid #1A5C9C;border-bottom:2.5px solid #1A5C9C"></div><div style="font:700 10px Roboto,system-ui;color:#1A5C9C;letter-spacing:.04em">PDF</div></div>
+    </div>
+    <div style="font:700 30px/37px Roboto,system-ui;color:#1F2933;margin-top:24px;text-wrap:pretty">Copy an answer.<br>Get a clean PDF.</div>
+    <div style="font:400 17px/26px Roboto,system-ui;color:#55606B;margin-top:14px;text-wrap:pretty">Paste anything you copied from ChatGPT or Gemini. CDF turns it into a neat A4 page you can print or hand in.</div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:28px">
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;border-radius:50%;background:#E7F4EC;flex:none;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:5px;border-left:2.5px solid #0E7B47;border-bottom:2.5px solid #0E7B47;transform:rotate(-45deg) translate(1px,-1px)"></div></div><div style="font:400 16px/22px Roboto,system-ui;color:#1F2933">Works without internet</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;border-radius:50%;background:#E7F4EC;flex:none;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:5px;border-left:2.5px solid #0E7B47;border-bottom:2.5px solid #0E7B47;transform:rotate(-45deg) translate(1px,-1px)"></div></div><div style="font:400 16px/22px Roboto,system-ui;color:#1F2933">No account, no sign-in</div></div>
+      <div style="display:flex;align-items:center;gap:12px"><div style="width:26px;height:26px;border-radius:50%;background:#E7F4EC;flex:none;display:flex;align-items:center;justify-content:center"><div style="width:10px;height:5px;border-left:2.5px solid #0E7B47;border-bottom:2.5px solid #0E7B47;transform:rotate(-45deg) translate(1px,-1px)"></div></div><div style="font:400 16px/22px Roboto,system-ui;color:#1F2933">Math, code and tables come out right</div></div>
+    </div>
+    <div style="flex:2"></div>
+    <div style="font:400 13px/18px Roboto,system-ui;color:#8A94A0;text-align:center;margin-bottom:12px">Everything stays on your phone. Nothing is uploaded.</div>
+    <div style="height:56px;border-radius:12px;background:#1A5C9C;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#fff">Start</div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Interaction:</b> shown once. "Start" cross-fades straight into Home (200 ms). No permissions asked, no carousel, no skip needed — one screen teaches the whole idea.</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ 1c HOME / CAPTURE ═══════════ -->
+<div class="dv-opt" id="1c" data-screen-label="1c Home / Capture">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Home / Capture — the one-tap flow</div>
+<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+<sc-if value="{{ showWireframes }}" hint-placeholder-val="{{ true }}">
+  <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:6px">
+    <div style="height:352px;background:#fff;border:1.5px solid #B7B2A6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font:9px ui-monospace,monospace;color:#8A8478">
+      <div style="display:flex;justify-content:space-between"><span>CDF</span><span style="border:1px dashed #B7B2A6;padding:1px 4px;border-radius:3px">history</span></div>
+      <div style="height:36px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center">clipboard offer<br>(only when text found)</div>
+      <div style="flex:1;border:1.5px dashed #B7B2A6;border-radius:8px;display:flex;align-items:center;justify-content:center;text-align:center">paste box<br>tap → keyboard</div>
+      <div style="height:30px;border:1.5px solid #8A8478;border-radius:8px;display:flex;align-items:center;justify-content:center">MAKE PDF — 56dp</div>
+    </div>
+    <div style="font:9.5px ui-monospace,monospace;color:#8A8478;text-align:center">wireframe</div>
+  </div>
+</sc-if>
+
+<!-- first-run empty + clipboard offer -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:8px 20px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:56px">
+      <div style="font:700 22px Roboto,system-ui;color:#1F2933;letter-spacing:-.01em">CDF</div>
+      <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:12px">
+        <div style="width:18px;height:18px;border:2px solid #55606B;border-radius:50%;position:relative"><div style="position:absolute;left:7px;top:3px;width:2px;height:6px;background:#55606B"></div><div style="position:absolute;left:7px;top:8px;width:5px;height:2px;background:#55606B"></div></div>
+        <span style="font:600 15px Roboto,system-ui;color:#55606B">History</span>
+      </div>
+    </div>
+    <div style="background:#E9F1F9;border:1.5px solid #BDD5EC;border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-top:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font:600 14px/19px Roboto,system-ui;color:#1A5C9C">You copied something — use it?</div>
+        <div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">"Step 1: Find the discriminant, D = b² − 4ac…"</div>
+      </div>
+      <div style="height:40px;padding:0 16px;border-radius:10px;background:#1A5C9C;color:#fff;display:flex;align-items:center;font:600 14.5px Roboto,system-ui;flex:none">Paste it</div>
+    </div>
+    <div style="flex:1;background:#fff;border:1.5px solid #E3DFD6;border-radius:16px;margin-top:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">
+      <div style="width:44px;height:52px;border:2px dashed #C9CFD6;border-radius:4px;display:flex;align-items:center;justify-content:center"><div style="width:20px;height:3px;background:#C9CFD6;box-shadow:0 7px 0 #C9CFD6,0 14px 0 #C9CFD6"></div></div>
+      <div style="font:400 17px/25px Roboto,system-ui;color:#55606B;max-width:260px;text-wrap:pretty">Paste an answer you copied from ChatGPT or Gemini</div>
+      <div style="font:400 13px/18px Roboto,system-ui;color:#8A94A0;max-width:240px">Tap here, hold for a second, then tap Paste</div>
+    </div>
+    <div style="height:56px;border-radius:12px;background:#DDD9D0;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#9AA2AB;margin-top:16px;flex:none">Make PDF</div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>First-run / empty.</b> If the clipboard holds text, the blue offer appears automatically — one tap on "Paste it" fills the box and enables the button. "Make PDF" stays visibly present but disabled, so the goal is never a mystery.</div>
+</div>
+
+<!-- filled / ready -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:8px 20px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:56px">
+      <div style="font:700 22px Roboto,system-ui;color:#1F2933;letter-spacing:-.01em">CDF</div>
+      <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px;border-radius:12px">
+        <div style="width:18px;height:18px;border:2px solid #55606B;border-radius:50%;position:relative"><div style="position:absolute;left:7px;top:3px;width:2px;height:6px;background:#55606B"></div><div style="position:absolute;left:7px;top:8px;width:5px;height:2px;background:#55606B"></div></div>
+        <span style="font:600 15px Roboto,system-ui;color:#55606B">History</span>
+      </div>
+    </div>
+    <div style="flex:1;background:#fff;border:2px solid #1A5C9C;border-radius:16px;margin-top:8px;display:flex;flex-direction:column;padding:16px;overflow:hidden;position:relative">
+      <div style="font:400 15px/23px Roboto,system-ui;color:#1F2933;overflow:hidden">Step 1: Find the discriminant, D = b² − 4ac.<br><br>For 2x² + 5x − 3 = 0 we have a = 2, b = 5, c = −3, so D = 25 − 4(2)(−3) = 25 + 24 = 49.<br><br>Step 2: Since D &gt; 0, there are two real, distinct roots.<br><br>Step 3: Apply the quadratic formula. Taking the square root, √49 = 7, so x = (−5 ± 7) / 4, giving x = ½ and x = −3.<br><br>We can verify: 2(½)² + 5(½) − 3 = ½ + 2½ − 3 = 0 ✓ and 2(−3)² + 5(−3) − 3 = 18 − 15 − 3 = 0 ✓…</div>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:72px;background:linear-gradient(rgba(255,255,255,0),#fff)"></div>
+      <div style="position:absolute;left:16px;right:16px;bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <div style="font:500 13px/18px Roboto,system-ui;color:#1A5C9C;background:#E9F1F9;border-radius:100px;padding:5px 12px">About 1 page</div>
+        <div style="height:40px;display:flex;align-items:center;padding:0 14px;border-radius:10px;border:1.5px solid #C9CFD6;background:#fff;font:600 14px Roboto,system-ui;color:#55606B">Clear</div>
+      </div>
+    </div>
+    <div style="height:56px;border-radius:12px;background:#1A5C9C;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#fff;margin-top:16px;flex:none">Make PDF</div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Filled / ready.</b> Blue border confirms the box has content; a page estimate sets expectations before rendering. One tap on "Make PDF" goes straight to <a class="dv-oid" href="#1d">1d</a> — no options, no settings.</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ 1d PROCESSING ═══════════ -->
+<div class="dv-opt" id="1d" data-screen-label="1d Processing">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Processing — the brief render moment</div>
+<div style="display:flex;gap:20px;align-items:flex-start">
+<sc-if value="{{ showWireframes }}" hint-placeholder-val="{{ true }}">
+  <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:6px">
+    <div style="height:352px;background:#fff;border:1.5px solid #B7B2A6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font:9px ui-monospace,monospace;color:#8A8478">
+      <div style="flex:1"></div>
+      <div style="width:40px;height:50px;border:1.5px dashed #B7B2A6;border-radius:4px;align-self:center;display:flex;align-items:center;justify-content:center">doc</div>
+      <div style="height:8px;border:1.5px solid #8A8478;border-radius:4px;margin:0 16px"></div>
+      <div style="height:26px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center">status line + reassurance</div>
+      <div style="flex:1"></div>
+      <div style="height:20px;border:1px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center">cancel (text)</div>
+    </div>
+    <div style="font:9.5px ui-monospace,monospace;color:#8A8478;text-align:center">wireframe</div>
+  </div>
+</sc-if>
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;align-items:center;background:#F7F5F0;padding:24px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="flex:1.3"></div>
+    <div style="width:88px;height:110px;background:#fff;border:2.5px solid #1A5C9C;border-radius:6px;position:relative;padding:14px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">
+      <div style="position:absolute;top:-2.5px;right:-2.5px;width:22px;height:22px;background:#F7F5F0;border-left:2.5px solid #1A5C9C;border-bottom:2.5px solid #1A5C9C"></div>
+      <div style="height:4px;border-radius:2px;background:#C9D9EA;width:60%"></div>
+      <div style="height:4px;border-radius:2px;background:#E3EBF4"></div>
+      <div style="height:4px;border-radius:2px;background:#E3EBF4"></div>
+      <div style="height:4px;border-radius:2px;background:#E3EBF4;width:80%"></div>
+      <div style="height:4px;border-radius:2px;background:#E3EBF4;width:55%"></div>
+    </div>
+    <div style="width:200px;height:8px;border-radius:4px;background:#E3DFD6;margin-top:32px;overflow:hidden"><div style="height:100%;border-radius:4px;background:#1A5C9C;animation:cdfbar 2.2s ease-out forwards"></div></div>
+    <div style="font:600 20px/28px Roboto,system-ui;color:#1F2933;margin-top:24px">Making your PDF…</div>
+    <div style="font:400 15.5px/23px Roboto,system-ui;color:#55606B;margin-top:6px;text-align:center">Tidying up the math, code and tables.</div>
+    <div style="font:400 13px/18px Roboto,system-ui;color:#8A94A0;margin-top:10px">Usually takes under 5 seconds.</div>
+    <div style="flex:2"></div>
+    <div style="height:48px;display:flex;align-items:center;padding:0 20px;font:600 15px Roboto,system-ui;color:#55606B">Cancel</div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Interaction:</b> everything renders on-device, so this screen usually lives &lt; 3 s. The bar animates to ~90% and snaps to done — fast-feeling, never stuck at 99%. If rendering takes &gt; 10 s the status line changes to "Almost there — long answers take a little longer."</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ 1e PDF PREVIEW (HERO) ═══════════ -->
+<div class="dv-opt" id="1e" data-screen-label="1e PDF Preview — hero">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>PDF Preview — the hero screen: math, code &amp; tables done right</div>
+<div style="display:flex;gap:20px;align-items:flex-start">
+<sc-if value="{{ showWireframes }}" hint-placeholder-val="{{ true }}">
+  <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:6px">
+    <div style="height:352px;background:#fff;border:1.5px solid #B7B2A6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font:9px ui-monospace,monospace;color:#8A8478">
+      <div style="display:flex;gap:6px;align-items:center"><span style="border:1px dashed #B7B2A6;border-radius:3px;padding:1px 4px">←</span><span>title + ready chip</span></div>
+      <div style="flex:1;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center;margin:0 10px">A4 page<br>pinch-zoom<br>swipe pages</div>
+      <div style="height:14px;display:flex;align-items:center;justify-content:center">page 1 of 2</div>
+      <div style="display:flex;gap:6px"><div style="flex:1.4;height:28px;border:1.5px solid #8A8478;border-radius:8px;display:flex;align-items:center;justify-content:center">PRINT</div><div style="flex:1;height:28px;border:1.5px dashed #B7B2A6;border-radius:8px;display:flex;align-items:center;justify-content:center">save</div><div style="flex:1;height:28px;border:1.5px dashed #B7B2A6;border-radius:8px;display:flex;align-items:center;justify-content:center">share</div></div>
+    </div>
+    <div style="font:9.5px ui-monospace,monospace;color:#8A8478;text-align:center">wireframe</div>
+  </div>
+</sc-if>
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#EBE8E1;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="display:flex;align-items:center;gap:6px;height:56px;padding:0 8px;background:#F7F5F0;border-bottom:1px solid #E3DFD6;flex:none">
+      <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-left:2.5px solid #1F2933;border-bottom:2.5px solid #1F2933;transform:rotate(45deg);margin-left:4px"></div></div>
+      <div style="flex:1;min-width:0"><div style="font:600 17px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Quadratic equations — roots</div><div style="font:400 12.5px/16px Roboto,system-ui;color:#8A94A0">2 pages · A4 · saved on your phone</div></div>
+      <div style="display:flex;align-items:center;gap:5px;background:#E7F4EC;border-radius:100px;padding:5px 11px;margin-right:8px"><div style="width:8px;height:4px;border-left:2px solid #0E7B47;border-bottom:2px solid #0E7B47;transform:rotate(-45deg)"></div><span style="font:600 12.5px Roboto,system-ui;color:#0E7B47">Ready</span></div>
+    </div>
+    <!-- A4 page -->
+    <div style="flex:1;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:14px 0 0">
+      <div style="width:330px;height:466px;background:#fff;box-shadow:0 2px 10px rgba(31,41,51,.16);padding:26px 28px;box-sizing:border-box;font-family:Georgia,'Times New Roman',serif;color:#1B222A;display:flex;flex-direction:column" data-om-raster>
+        <div style="font:700 13px/17px Georgia,serif">Quadratic Equations — Roots and the Discriminant</div>
+        <div style="width:34px;height:2px;background:#1B222A;margin:6px 0 10px"></div>
+        <div style="font:400 9.5px/15px Georgia,serif;text-align:justify">A quadratic equation has the general form <i>ax</i>²&nbsp;+&nbsp;<i>bx</i>&nbsp;+&nbsp;<i>c</i>&nbsp;=&nbsp;0, where <i>a</i>&nbsp;≠&nbsp;0. Its two roots are given by the quadratic formula:</div>
+        <div style="display:flex;justify-content:center;margin:10px 0;font:italic 11.5px Georgia,serif">
+          <span style="display:inline-flex;align-items:center;gap:5px"><span>x</span><span style="font-style:normal">=</span><span style="display:inline-flex;flex-direction:column;align-items:center"><span style="padding:0 8px 2px;white-space:nowrap">−b ± √<span style="border-top:1px solid #1B222A;padding-top:.5px">b² − 4ac</span></span><span style="border-top:1px solid #1B222A;padding:2px 8px 0">2a</span></span></span>
+        </div>
+        <div style="font:400 9.5px/15px Georgia,serif;text-align:justify">The quantity <i>D</i>&nbsp;=&nbsp;<i>b</i>²&nbsp;−&nbsp;4<i>ac</i> is called the <b>discriminant</b>. Its sign decides the nature of the roots:</div>
+        <table style="width:100%;border-collapse:collapse;margin:9px 0;font:400 8.5px/12px Georgia,serif">
+          <thead><tr>
+            <th style="border:0.5px solid #9AA2AB;background:#F1F0EC;padding:4px 6px;text-align:left;font-weight:700">Discriminant</th>
+            <th style="border:0.5px solid #9AA2AB;background:#F1F0EC;padding:4px 6px;text-align:left;font-weight:700">Nature of roots</th>
+            <th style="border:0.5px solid #9AA2AB;background:#F1F0EC;padding:4px 6px;text-align:left;font-weight:700">Example</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>D</i> &gt; 0</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px">Two real, distinct roots</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>x</i>² − 5<i>x</i> + 6 = 0</td></tr>
+            <tr><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>D</i> = 0</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px">One real, repeated root</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>x</i>² − 4<i>x</i> + 4 = 0</td></tr>
+            <tr><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>D</i> &lt; 0</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px">No real roots</td><td style="border:0.5px solid #9AA2AB;padding:4px 6px"><i>x</i>² + <i>x</i> + 1 = 0</td></tr>
+          </tbody>
+        </table>
+        <div style="font:400 9.5px/15px Georgia,serif;text-align:justify">In code, the same check comes first, so we never take the square root of a negative number:</div>
+        <div style="background:#F6F6F4;border:0.5px solid #DDDBD4;border-radius:3px;padding:8px 10px;margin:8px 0;font:400 8px/12.5px ui-monospace,Menlo,Consolas,monospace;color:#24292F;white-space:pre"><span style="color:#8250DF">import</span> math
+
+<span style="color:#8250DF">def</span> <span style="color:#0550AE">roots</span>(a, b, c):
+    d = b*b - <span style="color:#0550AE">4</span>*a*c          <span style="color:#6E7781"># discriminant</span>
+    <span style="color:#8250DF">if</span> d &lt; <span style="color:#0550AE">0</span>:
+        <span style="color:#8250DF">return</span> <span style="color:#0550AE">None</span>            <span style="color:#6E7781"># no real roots</span>
+    r = math.sqrt(d)
+    <span style="color:#8250DF">return</span> ((-b + r) / (<span style="color:#0550AE">2</span>*a), (-b - r) / (<span style="color:#0550AE">2</span>*a))</div>
+        <div style="flex:1"></div>
+        <div style="display:flex;justify-content:space-between;font:400 7.5px Georgia,serif;color:#9AA2AB;border-top:0.5px solid #E3DFD6;padding-top:5px"><span>Quadratic equations — roots</span><span>Page 1 of 2</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;font:500 13px/18px Roboto,system-ui;color:#55606B;padding:10px 0 4px;flex:none">Page 1 of 2 &nbsp;·&nbsp; swipe to see page 2</div>
+    <div style="display:flex;gap:10px;padding:10px 20px 16px;background:#F7F5F0;border-top:1px solid #E3DFD6;flex:none">
+      <div style="flex:1.5;height:56px;border-radius:12px;background:#0E7B47;color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;font:600 17px Roboto,system-ui"><div style="width:16px;height:11px;border:2px solid #fff;border-radius:2px;position:relative"><div style="position:absolute;left:2px;top:-5px;width:8px;height:4px;border:2px solid #fff;border-bottom:none;border-radius:2px 2px 0 0"></div></div>Print</div>
+      <div style="flex:1;height:56px;border-radius:12px;background:#fff;border:1.5px solid #C9CFD6;color:#1F2933;display:flex;align-items:center;justify-content:center;font:600 16px Roboto,system-ui">Save</div>
+      <div style="flex:1;height:56px;border-radius:12px;background:#fff;border:1.5px solid #C9CFD6;color:#1F2933;display:flex;align-items:center;justify-content:center;font:600 16px Roboto,system-ui">Share</div>
+    </div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>The trust moment.</b> The page shows the real render — block equation with a true fraction bar, inline math, ruled table, syntax-highlighted code — exactly as it will print on A4. Pinch to zoom, swipe between pages. <b>Print</b> (green = ready-to-go) opens Android's print dialog; <b>Save</b> writes to Downloads; <b>Share</b> opens the system sheet (WhatsApp → print shop is the common path). The file is already saved to <a class="dv-oid" href="#1f">1f</a> History before this screen appears — nothing can be lost.</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ 1f HISTORY ═══════════ -->
+<div class="dv-opt" id="1f" data-screen-label="1f History">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>History — reopen, reprint, delete</div>
+<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+<sc-if value="{{ showWireframes }}" hint-placeholder-val="{{ true }}">
+  <div style="width:170px;flex:none;display:flex;flex-direction:column;gap:6px">
+    <div style="height:352px;background:#fff;border:1.5px solid #B7B2A6;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;font:9px ui-monospace,monospace;color:#8A8478">
+      <div style="display:flex;gap:6px;align-items:center"><span style="border:1px dashed #B7B2A6;border-radius:3px;padding:1px 4px">←</span><span>History</span></div>
+      <div style="height:40px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center">item → reopens preview</div>
+      <div style="height:40px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center">item</div>
+      <div style="height:40px;border:1.5px dashed #B7B2A6;border-radius:4px;display:flex;align-items:center;justify-content:center;text-align:center">long-press →<br>print / share / delete</div>
+      <div style="flex:1"></div>
+      <div style="height:20px;display:flex;align-items:center;justify-content:center">no FAB — make PDFs from Home</div>
+    </div>
+    <div style="font:9.5px ui-monospace,monospace;color:#8A8478;text-align:center">wireframe</div>
+  </div>
+</sc-if>
+
+<!-- list -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:8px 20px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="display:flex;align-items:center;height:56px;gap:2px;margin-left:-12px">
+      <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-left:2.5px solid #1F2933;border-bottom:2.5px solid #1F2933;transform:rotate(45deg);margin-left:4px"></div></div>
+      <div style="font:600 22px Roboto,system-ui;color:#1F2933">History</div>
+    </div>
+    <div style="font:400 13.5px/19px Roboto,system-ui;color:#8A94A0;margin:2px 0 14px">Saved on your phone. Open any of these without internet.</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:#fff;border:1px solid #E3DFD6;border-radius:12px;display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px">
+        <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex:none;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+        <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Quadratic equations — roots</div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">2 pages · Today, 9:24 am</div></div>
+        <div style="width:10px;height:10px;border-right:2px solid #8A94A0;border-bottom:2px solid #8A94A0;transform:rotate(-45deg);flex:none"></div>
+      </div>
+      <!-- long-pressed item with action row -->
+      <div style="background:#fff;border:2px solid #1A5C9C;border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px">
+          <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex:none;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+          <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Photosynthesis — short notes</div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">1 page · Yesterday, 4:12 pm</div></div>
+        </div>
+        <div style="display:flex;border-top:1px solid #E3DFD6">
+          <div style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;font:600 14.5px Roboto,system-ui;color:#0E7B47;border-right:1px solid #E3DFD6">Print again</div>
+          <div style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;font:600 14.5px Roboto,system-ui;color:#1A5C9C;border-right:1px solid #E3DFD6">Share</div>
+          <div style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;font:600 14.5px Roboto,system-ui;color:#B3362B">Delete</div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #E3DFD6;border-radius:12px;display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px">
+        <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex:none;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+        <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Essay — Rani Lakshmibai</div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">3 pages · 2 Jul</div></div>
+        <div style="width:10px;height:10px;border-right:2px solid #8A94A0;border-bottom:2px solid #8A94A0;transform:rotate(-45deg);flex:none"></div>
+      </div>
+      <div style="background:#fff;border:1px solid #E3DFD6;border-radius:12px;display:flex;align-items:center;gap:14px;padding:14px 16px;min-height:56px">
+        <div style="width:40px;height:48px;border:2px solid #1A5C9C;border-radius:4px;background:#E9F1F9;flex:none;display:flex;align-items:center;justify-content:center;font:700 11px Roboto,system-ui;color:#1A5C9C">PDF</div>
+        <div style="flex:1;min-width:0"><div style="font:500 16px/22px Roboto,system-ui;color:#1F2933;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Trigonometry identities table</div><div style="font:400 13.5px/18px Roboto,system-ui;color:#55606B">1 page · 28 Jun</div></div>
+        <div style="width:10px;height:10px;border-right:2px solid #8A94A0;border-bottom:2px solid #8A94A0;transform:rotate(-45deg);flex:none"></div>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Interactions:</b> tap reopens the document in the Preview screen (<a class="dv-oid" href="#1e">1e</a>) with the same Print / Save / Share bar — so a separate "document detail" screen never earned its place. Long-press reveals the inline action row shown on item 2; Delete asks once: "Delete this PDF? You can't undo this." Total app surface stays at 5 screens.</div>
+</div>
+
+<!-- empty -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:8px 20px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="display:flex;align-items:center;height:56px;gap:2px;margin-left:-12px">
+      <div style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><div style="width:11px;height:11px;border-left:2.5px solid #1F2933;border-bottom:2.5px solid #1F2933;transform:rotate(45deg);margin-left:4px"></div></div>
+      <div style="font:600 22px Roboto,system-ui;color:#1F2933">History</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:0 24px">
+      <div style="width:64px;height:78px;border:2.5px dashed #C9CFD6;border-radius:6px;display:flex;align-items:center;justify-content:center"><div style="width:28px;height:4px;border-radius:2px;background:#DDD9D0;box-shadow:0 10px 0 #DDD9D0,0 20px 0 #DDD9D0"></div></div>
+      <div style="font:600 19px/26px Roboto,system-ui;color:#1F2933">No PDFs yet</div>
+      <div style="font:400 15.5px/23px Roboto,system-ui;color:#55606B;max-width:260px;text-wrap:pretty">Your PDFs will appear here, saved on your phone — no internet needed to open them.</div>
+      <div style="height:48px;padding:0 22px;border-radius:12px;border:1.5px solid #1A5C9C;display:flex;align-items:center;font:600 15.5px Roboto,system-ui;color:#1A5C9C;margin-top:6px">Make your first PDF</div>
+    </div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Empty state</b> reassures (offline, on-phone) and offers one exit: back to Home.</div>
+</div>
+</div>
+</div>
+
+<!-- ═══════════ 1g EDGE & ERROR STATES ═══════════ -->
+<div class="dv-opt" id="1g" data-screen-label="1g Edge and error states">
+<div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Edge &amp; error states — calm, blame-free, always a way out</div>
+<div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+
+<!-- clipboard empty -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F7F5F0;padding:8px 20px 20px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;height:56px">
+      <div style="font:700 22px Roboto,system-ui;color:#1F2933;letter-spacing:-.01em">CDF</div>
+      <div style="height:48px;display:flex;align-items:center;gap:8px;padding:0 12px"><div style="width:18px;height:18px;border:2px solid #55606B;border-radius:50%;position:relative"><div style="position:absolute;left:7px;top:3px;width:2px;height:6px;background:#55606B"></div><div style="position:absolute;left:7px;top:8px;width:5px;height:2px;background:#55606B"></div></div><span style="font:600 15px Roboto,system-ui;color:#55606B">History</span></div>
+    </div>
+    <div style="flex:1;background:#fff;border:1.5px solid #E3DFD6;border-radius:16px;margin-top:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center">
+      <div style="width:44px;height:52px;border:2px dashed #C9CFD6;border-radius:4px;display:flex;align-items:center;justify-content:center"><div style="width:20px;height:3px;background:#C9CFD6;box-shadow:0 7px 0 #C9CFD6,0 14px 0 #C9CFD6"></div></div>
+      <div style="font:400 17px/25px Roboto,system-ui;color:#55606B;max-width:260px;text-wrap:pretty">Paste an answer you copied from ChatGPT or Gemini</div>
+    </div>
+    <div style="height:56px;border-radius:12px;background:#DDD9D0;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#9AA2AB;margin-top:16px;flex:none">Make PDF</div>
+    <div style="position:absolute;left:20px;right:20px;bottom:92px;background:#2B333B;border-radius:12px;padding:14px 16px;box-shadow:0 6px 20px rgba(31,41,51,.25)">
+      <div style="font:500 14.5px/21px Roboto,system-ui;color:#fff">Nothing on your clipboard yet. Copy an answer first, then come back — we'll spot it.</div>
+    </div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Nothing on the clipboard.</b> Toast appears if the user taps the box's Paste with an empty clipboard. The empty-paste case never becomes an error: "Make PDF" simply stays disabled (with the helper string from <a class="dv-oid" href="#1a">1a</a> if tapped).</div>
+</div>
+
+<!-- render failed -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;align-items:center;background:#F7F5F0;padding:24px;box-sizing:border-box;font-family:Roboto,system-ui,sans-serif">
+    <div style="flex:1.3"></div>
+    <div style="width:72px;height:72px;border-radius:50%;background:#FBEBE9;display:flex;align-items:center;justify-content:center"><div style="width:5px;height:26px;background:#B3362B;border-radius:3px;position:relative"><div style="position:absolute;left:0;bottom:-11px;width:5px;height:5px;border-radius:50%;background:#B3362B"></div></div></div>
+    <div style="font:600 20px/28px Roboto,system-ui;color:#1F2933;margin-top:24px">That didn't work</div>
+    <div style="font:400 15.5px/23px Roboto,system-ui;color:#55606B;margin-top:8px;text-align:center;max-width:280px;text-wrap:pretty">Don't worry — your text is safe and still in the box. This is our fault, not yours.</div>
+    <div style="flex:2"></div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:10px">
+      <div style="height:56px;border-radius:12px;background:#1A5C9C;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#fff">Try again</div>
+      <div style="height:48px;display:flex;align-items:center;justify-content:center;font:600 15px Roboto,system-ui;color:#55606B">Go back to my text</div>
+    </div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>Render failed.</b> Blame-free copy, text guaranteed safe, retry is the big thumb target. After 2 failures the sub-line adds: "Still stuck? Try making the PDF from a smaller part of the answer."</div>
+</div>
+
+<!-- no printer -->
+<div style="flex:none;display:flex;flex-direction:column;gap:8px">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 392 }}" height="{{ 830 }}" hint-size="392px,830px">
+  <div style="height:100%;display:flex;flex-direction:column;background:rgba(31,41,51,.45);box-sizing:border-box;font-family:Roboto,system-ui,sans-serif;justify-content:flex-end">
+    <div style="background:#F7F5F0;border-radius:20px 20px 0 0;padding:12px 20px 24px;box-shadow:0 -6px 24px rgba(31,41,51,.2)">
+      <div style="width:36px;height:4px;border-radius:2px;background:#C9CFD6;margin:0 auto 18px"></div>
+      <div style="width:64px;height:64px;border-radius:50%;background:#FBF3E2;display:flex;align-items:center;justify-content:center;margin:0 auto"><div style="width:22px;height:15px;border:2.5px solid #8A6116;border-radius:3px;position:relative"><div style="position:absolute;left:3px;top:-7px;width:10px;height:5px;border:2.5px solid #8A6116;border-bottom:none;border-radius:3px 3px 0 0"></div></div></div>
+      <div style="font:600 20px/28px Roboto,system-ui;color:#1F2933;text-align:center;margin-top:16px">No printer found nearby</div>
+      <div style="font:400 15.5px/23px Roboto,system-ui;color:#55606B;text-align:center;margin:8px auto 0;max-width:300px;text-wrap:pretty">Your PDF is safe and saved. You can print it later at a print shop — just save it or share it on WhatsApp.</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:22px">
+        <div style="height:56px;border-radius:12px;background:#1A5C9C;display:flex;align-items:center;justify-content:center;font:600 17px Roboto,system-ui;color:#fff">Save PDF to my phone</div>
+        <div style="height:56px;border-radius:12px;background:#fff;border:1.5px solid #C9CFD6;display:flex;align-items:center;justify-content:center;font:600 16px Roboto,system-ui;color:#1F2933">Share on WhatsApp instead</div>
+        <div style="height:48px;display:flex;align-items:center;justify-content:center;font:600 15px Roboto,system-ui;color:#55606B">Look for printers again</div>
+      </div>
+    </div>
+  </div>
+</x-import>
+<div style="max-width:392px;font:12px/1.55 system-ui;color:#55606B"><b>No printer found.</b> The realistic Indian path — save or WhatsApp it to a print shop — is offered first-class, so "no printer" never feels like a dead end.</div>
+</div>
+</div>
+</div>
+
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showWireframes&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Presentation&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      showWireframes: this.props.showWireframes ?? true,
+      previewPage: this.props.previewPage ?? 1
+    };
+  }
+}
+</script>
+</body>
+</html>

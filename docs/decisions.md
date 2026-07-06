@@ -53,3 +53,16 @@
 ## 2026-07-06 — First spike: prove render fidelity in a BROWSER before phone/shell
 **Decision:** The very first build task is a throwaway spike: build the hard sample (a KaTeX equation, a syntax-highlighted code block, a multi-row table) as an HTML+print-CSS page with `paged.js`, perfect it in a **desktop browser** (print-to-PDF), THEN validate the same HTML on-device (expo-print and/or Capacitor system WebView) to see how much fidelity the mobile engine loses.
 **Why:** Android WebView's *print* engine has documented bugs (trailing blank pages, mid-page breaks, flex unreliable → use `display:block`, `position:absolute` disrupts breaks) and math/code/table fidelity is officially undocumented. The browser loop gives instant feedback with zero phone/EAS overhead, the HTML/CSS is portable to whichever shell wins, and comparing browser-vs-device output is exactly the evidence needed to settle the shell fork. *(Default, driven by research + Pravah/Khata findings.)*
+
+## 2026-07-07 — Device testing runs autonomously via adb (Sonnet agents), not human-in-the-loop Expo Go QR flow
+**Why:** Raja hit the Expo Go SDK-mismatch error and explicitly wants zero manual testing. adb over USB gives agents logcat, screencap, UI driving, and `adb reverse` networking (no Wi-Fi/QR). Rejected: manual QR + human eyeballing (slow, error-prone), EAS cloud simulator (real-hardware WebView fidelity is the whole point).
+
+## 2026-07-07 — Pin Expo SDK 54 (phone's Expo Go 54.0.8), not latest
+**Why:** Expo Go runs exactly one SDK; scaffolding "latest" (57) produced an unloadable project. Check `adb shell dumpsys package host.exp.exponent | grep versionName` before any scaffold. Revisit when his Expo Go updates.
+
+## 2026-07-07 — Get generated files off the phone via HTTP POST to an adb-reversed port
+**Why:** Expo Go's app-private cache is not adb-readable on unrooted phones, and share-sheet automation is brittle. The test app POSTs base64 to `http://localhost:9099` (reversed to the dev box). Rejected: MediaLibrary/SAF (permission dialogs), rooting (absurd).
+
+## 2026-07-07 — SPIKE VERDICT: GO on expo-print (issue #2)
+**Why:** On-device (Moto Edge 60 Fusion, Expo Go SDK 54) the torture HTML matched the clean browser PDF: math PASS (base64 @font-face honored), code PASS (same clean page split), tables PASS, no trailing blank, 714ms for 279KB HTML. Shell stays Expo + expo-print; Capacitor fallback retired.
+**One fix-before-ship:** Android's print bridge ignores CSS `@page size: A4` — device PDF came out US Letter (612×792pt). Fix: pass explicit `width: 595, height: 842` to `Print.printToFileAsync`; keep `@page` margins in CSS. Full comparison: `spike/DEVICE-FINDINGS.md`.

@@ -1,0 +1,162 @@
+<meta charset="utf-8">
+<title>chat-to-pdf render spike</title>
+<style>
+/* ---- KaTeX (inlined, fonts embedded as base64 woff2) ---- */
+/*__KATEX_CSS__*/
+/* ---- highlight.js theme (inlined) ---- */
+/*__HLJS_CSS__*/
+
+/* ================= Print / page setup ================= */
+@page {
+  size: A4;
+  margin: 20mm;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  display: block;               /* NO flas/grid: Android WebView print is unreliable with them */
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: #1a1a1a;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3 {
+  display: block;
+  font-family: "Helvetica", "Arial", sans-serif;
+  line-height: 1.25;
+  color: #111;
+  page-break-after: avoid;      /* keep heading with following content */
+}
+h1 { font-size: 20pt; margin: 0 0 4pt; border-bottom: 2px solid #333; padding-bottom: 4pt; }
+h2 { font-size: 15pt; margin: 18pt 0 6pt; }
+h3 { font-size: 12.5pt; margin: 14pt 0 4pt; }
+
+p  { display: block; margin: 0 0 8pt; text-align: justify; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 8pt; padding-left: 22pt; }
+li { margin: 0 0 3pt; }
+
+.meta { color: #666; font-size: 9.5pt; font-family: sans-serif; margin-bottom: 12pt; }
+
+/* ---- Math ---- */
+.katex-display {
+  margin: 12pt 0;
+  page-break-inside: avoid;     /* don't split a single display equation */
+  overflow: hidden;             /* guard against horizontal overflow off the page */
+}
+.katex { font-size: 1.05em; }
+
+/* ---- Code ---- */
+pre {
+  display: block;
+  page-break-inside: avoid;     /* keep short blocks whole; tall ones still split */
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  padding: 8pt 10pt;
+  margin: 10pt 0;
+  white-space: pre-wrap;        /* wrap long lines instead of overflowing the page */
+  word-break: break-word;
+  overflow: hidden;
+}
+pre code, code {
+  font-family: "DejaVu Sans Mono", "Consolas", "Menlo", "Courier New", monospace;
+  font-size: 8.5pt;
+  line-height: 1.4;
+}
+p code { background: #f0f0f0; padding: 0 2px; border-radius: 3px; font-size: 9pt; }
+
+/* ---- Table ---- */
+table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10pt 0;
+  font-family: sans-serif;
+  font-size: 9pt;
+  page-break-inside: avoid;     /* keep the whole table together if it fits */
+}
+thead { display: table-header-group; }   /* repeat header if the table splits */
+th, td {
+  border: 1px solid #999;
+  padding: 4pt 6pt;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: #ececec; font-weight: bold; }
+tbody tr:nth-child(even) { background: #f7f7f7; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+
+<body>
+<h1>Render-Fidelity Spike: Math, Code &amp; Tables in A4</h1>
+<p class="meta">chat-to-pdf &middot; GitHub issue #2 &middot; browser phase &middot; self-contained, no network assets</p>
+
+<p>This document is a torture test for the on-device HTML&rarr;PDF pipeline. It mixes
+KaTeX-rendered mathematics, a syntax-highlighted code listing long enough to cross a
+page boundary, and a wide multi-row table. Everything is inlined so the exact same
+markup can be handed to <code>expo-print</code>'s Android WebView print engine without a
+server, a build step, or a single network request.</p>
+
+<h2>1. Mathematics</h2>
+<p>Inline math must sit cleanly on the text baseline. The merge-sort recurrence solves to
+<!--__INLINE1__--> time, Gauss&rsquo;s law reads <!--__INLINE2__-->, and the constants
+<!--__INLINE3__--> are ordinary reals embedded mid-sentence. Notice that none of these
+inline spans should disturb the surrounding line height.</p>
+
+<p>Display equations are centered on their own line. The closed form for a 2&times;2 inverse:</p>
+<!--__DISPLAY_MATRIX__-->
+<p>And two classic results &mdash; the Gaussian integral and the Basel sum &mdash; side by side:</p>
+<!--__DISPLAY_INTEGRAL__-->
+<p>If any glyph above renders as a blank box, a wrong character, or a missing radical/bracket,
+the embedded font subset is incomplete and the on-device pass will fail the same way.</p>
+
+<h2>2. A syntax-highlighted code listing</h2>
+<p>The following ~90-line Python listing intentionally overflows a single page. A code block
+taller than one page <em>must</em> be permitted to split; <code>page-break-inside: avoid</code>
+should only protect blocks that still fit. Watch the page boundary for a clean break between
+lines (never mid-glyph) and confirm the monospace font and highlight colors survive.</p>
+<pre><code class="hljs language-python"><!--__CODE__--></code></pre>
+
+<h2>3. A wide, bordered table</h2>
+<p>Sixteen data rows across five columns. Borders must stay intact on every cell, the header
+row should repeat if the table is forced to split, and numeric columns should stay right-aligned.</p>
+<table>
+  <thead>
+    <tr><th>#</th><th>Algorithm</th><th>Best</th><th>Average</th><th>Worst</th><th>Stable</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">1</td><td>Quicksort</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n&sup2;)</td><td>No</td></tr>
+    <tr><td class="num">2</td><td>Merge sort</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n log n)</td><td>Yes</td></tr>
+    <tr><td class="num">3</td><td>Heapsort</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n log n)</td><td>No</td></tr>
+    <tr><td class="num">4</td><td>Insertion sort</td><td>O(n)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>Yes</td></tr>
+    <tr><td class="num">5</td><td>Selection sort</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>No</td></tr>
+    <tr><td class="num">6</td><td>Bubble sort</td><td>O(n)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>Yes</td></tr>
+    <tr><td class="num">7</td><td>Shell sort</td><td>O(n log n)</td><td>O(n^1.25)</td><td>O(n&sup2;)</td><td>No</td></tr>
+    <tr><td class="num">8</td><td>Counting sort</td><td>O(n+k)</td><td>O(n+k)</td><td>O(n+k)</td><td>Yes</td></tr>
+    <tr><td class="num">9</td><td>Radix sort</td><td>O(nk)</td><td>O(nk)</td><td>O(nk)</td><td>Yes</td></tr>
+    <tr><td class="num">10</td><td>Bucket sort</td><td>O(n+k)</td><td>O(n+k)</td><td>O(n&sup2;)</td><td>Yes</td></tr>
+    <tr><td class="num">11</td><td>Tim sort</td><td>O(n)</td><td>O(n log n)</td><td>O(n log n)</td><td>Yes</td></tr>
+    <tr><td class="num">12</td><td>Introsort</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n log n)</td><td>No</td></tr>
+    <tr><td class="num">13</td><td>Cocktail sort</td><td>O(n)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>Yes</td></tr>
+    <tr><td class="num">14</td><td>Gnome sort</td><td>O(n)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>Yes</td></tr>
+    <tr><td class="num">15</td><td>Comb sort</td><td>O(n log n)</td><td>O(n&sup2;/2^p)</td><td>O(n&sup2;)</td><td>No</td></tr>
+    <tr><td class="num">16</td><td>Cycle sort</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>O(n&sup2;)</td><td>No</td></tr>
+  </tbody>
+</table>
+
+<h2>4. Closing prose</h2>
+<p>If this page renders with correct math glyphs, monospaced and colored code that breaks
+cleanly across the page boundary, an unbroken bordered table, and no trailing blank page,
+the browser-side render approach is validated. The remaining risk lives entirely in the
+delta between Chromium&rsquo;s print engine and Android&rsquo;s WebView print engine, which the
+on-device phase measures next.</p>
+<ul>
+  <li>Fonts are embedded as base64 woff2 &mdash; no <code>@font-face</code> network fetch.</li>
+  <li>Layout uses <code>display: block</code> / <code>table</code> only &mdash; no flex or grid.</li>
+  <li>All page-break hints are expressed with widely-supported CSS 2.1 properties.</li>
+</ul>
+</body>

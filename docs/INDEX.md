@@ -10,3 +10,6 @@
 | specs/0001-architecture-foundation.md | The v0 architecture foundation — pipeline, locked decisions, module map, risks, build order |
 | specs/ | Numbered specs for complex features (see /spec) |
 | sessions/ | One append-only log per day |
+| ../design/DESIGN-SPEC.md | UI source of truth — screens, palette, tokens, components (distilled from the claude.ai design) |
+| ../spike/FINDINGS.md | Browser-phase spike results (render fidelity, gotchas for on-device) |
+| ../spike/DEVICE-FINDINGS.md | On-device spike results + go/no-go (written by the device test agent) |
