@@ -25,6 +25,7 @@ import {
   SaveFailedError,
   SharingUnavailableError,
 } from './src/output';
+import { saveDocument, deriveTitle } from './src/storage';
 
 // Minimal capture screen for issue #6 (paste box + clipboard read). Logic lives
 // in src/capture (useCapture hook + pure helpers); this file is a thin,
@@ -82,7 +83,24 @@ export default function App() {
     setActionNote(null);
     try {
       const html = markdownToHtml(text);
-      const uri = await renderToPdf(html);
+      const cacheUri = await renderToPdf(html);
+      // LOCKED INVARIANT (docs/STATE.md): the PDF is saved to History BEFORE the
+      // done state (Preview) shows. Persist synchronously on render success and
+      // hand the durable document-dir uri to Share/Print/Save so nothing points
+      // at the purgeable expo-print cache. If history persistence fails we must
+      // NOT lose the render — fall back to the cache uri so the user can still
+      // Share/Print this session.
+      let uri = cacheUri;
+      try {
+        const doc = await saveDocument({
+          title: deriveTitle(text),
+          sourceMarkdown: text,
+          cachePdfUri: cacheUri,
+        });
+        uri = doc.pdfUri;
+      } catch (saveErr) {
+        console.warn('[App] saveDocument failed; using cache uri:', saveErr);
+      }
       setStatus({ kind: 'done', uri, filename: suggestFilename(text) });
     } catch (err) {
       setStatus({

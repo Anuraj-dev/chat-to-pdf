@@ -1,3 +1,15 @@
-// STORAGE — v0 uses AsyncStorage for doc metadata/history + expo-file-system for PDF bytes.
-// See docs/specs/0001-architecture-foundation.md §4. Placeholder for issue #8.
-export {};
+// [4] STORAGE — public API: on-device PDF history over AsyncStorage +
+// expo-file-system (durable document dir). See docs/specs/0001 §4. Issue #8.
+
+export {
+  HISTORY_KEY,
+  HISTORY_CAP,
+  deriveTitle,
+  saveDocument,
+  listDocuments,
+  getDocument,
+  deleteDocument,
+  regeneratePdf,
+} from './history';
+export type { SaveDocumentInput } from './history';
+export type { HistoryDoc } from '../types';
