@@ -66,3 +66,9 @@
 ## 2026-07-07 — SPIKE VERDICT: GO on expo-print (issue #2)
 **Why:** On-device (Moto Edge 60 Fusion, Expo Go SDK 54) the torture HTML matched the clean browser PDF: math PASS (base64 @font-face honored), code PASS (same clean page split), tables PASS, no trailing blank, 714ms for 279KB HTML. Shell stays Expo + expo-print; Capacitor fallback retired.
 **One fix-before-ship:** Android's print bridge ignores CSS `@page size: A4` — device PDF came out US Letter (612×792pt). Fix: pass explicit `width: 595, height: 842` to `Print.printToFileAsync`; keep `@page` margins in CSS. Full comparison: `spike/DEVICE-FINDINGS.md`.
+
+## 2026-07-07 — No expo-dev-client; dev stays in Expo Go
+**Why:** Installing expo-dev-client flips `npx expo start` into dev-client mode, breaking the Expo Go USB/LAN workflow the whole overnight test loop depends on. The eas.json `development` profile builds a plain internal APK instead. Alternative (install it for proper dev builds) rejected for v0 — Expo Go covers all dev needs and EAS build budget is tight.
+
+## 2026-07-07 — Print quality + capture UX are research-backed issues, not folklore
+**Why:** Sonnet research distilled into issue #10 (exact print stylesheet spec + verified Android WebView print constraints — no page counters possible) and #11 (per-AI "get full answer" prompts with four-tilde outer fence + parser hardening). These are the spec for #5's CSS and #4's parser edge cases; alternative (improvise during implementation) rejected — quality bar is 9.5/10.

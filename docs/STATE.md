@@ -1,40 +1,39 @@
 # chat-to-pdf — State
-> Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-07
+> Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-07 01:51 (overnight autonomous run)
 
 ## 🚧 In progress / next
-- **NEXT = issue #3: Scaffold Expo (TS) project + EAS + tooling.** Pin SDK 54. TDD setup (jest + jest-expo) is part of it. Then issues #4–#9 in order, one at a time.
-- **Issue #2 spike DONE & CLOSED — verdict: GO on expo-print** (both phases passed; see decisions.md 2026-07-07). One fix-before-ship carried into issue #5: pass explicit `width:595, height:842` to `printToFileAsync` — Android ignores CSS `@page size:A4` (outputs Letter).
-- Uncommitted: `spike/`, `design/`, all docs changes. PR-per-issue vs commit-per-issue still unanswered by Raja (default: commit-per-issue on main after codex review).
-- **Orchestrator rule (Raja, explicit): protect the driver's context at all costs** — delegate everything heavy (code → Opus, device/browser testing + reading → Sonnet, reviews → codex), consume only reports; never read big files/transcripts inline.
+- **NEXT = issue #4: Parse layer (markdown → HTML + KaTeX).** Then #5–#9 in order, then #10 (quality gate), #11 (capture helper). Overnight loop: Opus implements TDD → driver verifies → codex reviews → commit → close.
+- **Push policy tonight**: direct push to `main` is blocked by local permission policy → commits land on `main` locally and are pushed to branch **`overnight-build`** after each issue. Raja: fast-forward `origin/main` to `overnight-build` in the morning.
+- **Phase 3 blocker (pending)**: `EXPO_TOKEN` is NOT in the env and eas-cli is not logged in → EAS build will fail. Raja must `eas login` or export EXPO_TOKEN. Recheck before Phase 3.
 
 ## Status
-- Spike complete: browser ✅ (2026-07-06) + device ✅ (2026-07-07, 714ms/279KB, math/code/tables PASS, Letter-size defect noted). Issues #3–#9 remain.
-- **Design imported**: `design/CDF App Design.dc.html` (from claude.ai/design) + distilled `design/DESIGN-SPEC.md` — 5 flat screens (Onboarding, Home/Capture, Processing, Preview, History) + error states. No gaps vs PRD. Issue #9 implements this spec.
-- Nothing committed yet this session (spike/ + design/ are untracked).
+- Issue #3 DONE (commit 62e650f, closed): Expo SDK 54 TS scaffold at repo root, EAS profiles (dev/preview APK, no dev-client — Expo Go workflow), jest+jest-expo (1/1), tsc clean, expo-doctor 18/18, codex-reviewed, on-device boot PASS (screenshot-verified Hello screen).
+- Phase 1 research DONE → issue #10 (PDF formatting quality gate: full print stylesheet spec, A4 margins/type scale/break rules + WebView reality) and #11 (capture helper: per-AI "get full answer" prompts, four-tilde fence trick, parser-hardening reqs for #4).
+- spike/ + design/ + docs committed (e27998d). Issues #4–#9 + #10, #11 open.
 
 ## Architecture map
-- Pipeline: Capture → Parse → Render → Output/Store (all on-device). Target layout: `app/` + `src/{capture,parse,render,output,storage}` — spec 0001 §4.
-- Spike (throwaway): `spike/sample.html` (self-contained torture test, 285KB), `spike/browser-output.pdf`, `spike/device/` (minimal Expo test app), `spike/embed-html.js`.
-- Design: `design/DESIGN-SPEC.md` = implementation source of truth for UI (palette #F7F5F0/#1F2933/#1A5C9C/#0E7B47, Roboto 17px body, 56dp CTAs, radius 8/12/16).
+- Pipeline: Capture → Parse → Render → Output/Store (on-device). `App.tsx` + `src/{capture,parse,render,output,storage,types}` — spec 0001 §4.
+- Print quality bar: issue #10 (spec inline in the issue). Capture helper prompts: issue #11.
+- Design: `design/DESIGN-SPEC.md` = UI source of truth (issue #9). Spike learnings: `spike/FINDINGS.md`, `spike/DEVICE-FINDINGS.md`.
 
 ## Stack & run
-- Stack: React Native + Expo (managed) + TypeScript. Android-first.
-- **Raja's phone: Motorola Edge 60 Fusion, Android 16, Expo Go 54.0.8 → SDK 54 ONLY.** Pin all scaffolds to SDK 54 until his Expo Go updates.
-- Device access: **adb over USB works** (serial ZN42274J4F). `adb reverse tcp:8081/tcp:9099` pattern: phone reaches Metro + a local receive-server as localhost — no Wi-Fi/QR needed. Sonnet subagents run all device tests autonomously.
-- Run: `npx expo start` in the app dir; launch on phone: `adb shell am start -a android.intent.action.VIEW -d "exp://127.0.0.1:8081"`.
+- Expo SDK 54 (PINNED — phone's Expo Go 54.0.8) + TS. markdown-it + @vscode/markdown-it-katex + katex; expo-print/file-system/sharing; AsyncStorage. No router.
+- Run: `npx expo start` · Test: `npm test` · Types: `npm run typecheck` · Health: `npx expo-doctor`.
+- Phone: Motorola Edge 60 Fusion, serial ZN42274J4F, adb USB OK. Screen kept awake tonight via `adb shell svc power stayon true`.
+- **Device launch: adb reverse tcp:8081 was silently broken (tunnel up, zero bytes) — working fallback: LAN `exp://192.168.0.101:8081`** after `am force-stop host.exp.exponent` (kills stale cached experience).
 
 ## Key decisions (top 6)
-- On-device render, NO backend/auth (confirmed). HTML/CSS → expo-print, not direct PDF drawing.
-- Shell: Expo + RN + expo-print (FINAL; Capacitor = fallback if device spike fails).
-- Storage v0 = AsyncStorage; no router lib.
-- Math/code pre-rendered to static HTML at parse time (no JS at print time — WebView JS timing unreliable); KaTeX fonts embedded as base64 woff2 subsets.
-- Design invariant: PDF saved to History BEFORE Preview shows. Dark mode = out of scope v0 (design only sketches it).
-- Workflow: Opus subagents code (TDD), Sonnet subagents test on device via adb, codex reviews each substantial issue diff before commit. Raja: no PR flow decided yet (asked, unanswered — default: commit-per-issue on main after codex review).
+- On-device render via HTML/CSS → expo-print (FINAL). Storage v0 = AsyncStorage. No backend/auth.
+- Math/code pre-rendered to static HTML at parse time; KaTeX fonts base64-embedded.
+- NO expo-dev-client (would flip `expo start` away from Expo Go) — dev = Expo Go, ship = EAS preview APK.
+- Letter-size fix lands in #5: explicit `width:595, height:842` in printToFileAsync (Android ignores CSS @page size).
+- PDF saved to History BEFORE Preview shows. Dark mode out of scope v0.
+- Workflow: commit-per-issue on main (local) + push to overnight-build; codex reviews substantial diffs.
 
 ## Gotchas
-- Android WebView print bugs (trailing blanks, mid-breaks, flex unreliable → `display:block`). Browser spike used only CSS 2.1 page-break hints — keep it that way.
-- KaTeX font subset is content-specific: spike embeds only 12 families; real app must embed full set or detect per-document (see `spike/FINDINGS.md` gotcha #2).
-- ~286KB HTML string per print → watch printToFileAsync latency on low-end phones (device spike measures it).
-- Expo Go SDK mismatch bit us once (scaffold defaulted to SDK 57). Always check `adb shell dumpsys package host.exp.exponent | grep versionName` first.
-- Expo Go app cache is not adb-readable — get files off the phone via HTTP POST to `adb reverse`d port.
-- EAS free tier: 15 Android builds/mo — stay in Expo Go.
+- Android WebView print: no @page margin boxes/page counters (OS-level); break-inside:avoid works; orphans/widows unreliable; portrait only. Full spec in issue #10.
+- ChatGPT escapes `$` in math (`\$`) and prefers `\( \)` — parser must strip/accept fallbacks (issue #11 checklist → #4).
+- jest-expo must stay ~54.x (ERESOLVE if it drifts to SDK 57); @types/jest pinned v29.
+- SafeAreaView deprecation warning from App.tsx (cosmetic) — migrate to react-native-safe-area-context in #9.
+- Expo Go app cache not adb-readable — get files off phone via HTTP POST to a reversed port (if reverse works) or LAN.
+- EAS free tier 15 builds/mo — tonight's budget: max 3.
