@@ -21,13 +21,14 @@
 - Build test APK: `eas build -p android --profile preview --non-interactive`.
 - Test: TODO (set up during scaffold).
 
-## Key decisions (top 5)
+## Key decisions (top 6)
 - On-device render, NO backend/auth/account (confirmed).
+- **Shell: Expo + React Native + expo-print** (FINAL — beats Capacitor on silent one-tap vector PDF; Capacitor = documented fallback). Validated no-Android-Studio by research + video BMMcmmnjrM8.
 - HTML/CSS → expo-print, not direct PDF drawing (confirmed).
-- Copy-paste capture in v1; share-sheet is v2.
-- markdown-it + KaTeX (bundled offline); expo-sqlite + expo-file-system storage.
-- EAS cloud build; local box only needs Node + eas-cli.
-- Full rationale: `docs/decisions.md`.
+- **Storage v0 = AsyncStorage** (locked; SQLite is later upgrade). No router lib — hand-rolled tabs + BottomTabBar.
+- Copy-paste capture v1 (share-sheet v2); markdown-it + KaTeX bundled offline.
+- EAS cloud build; local box only needs Node + eas-cli. Render developed browser-first.
+- Full rationale: `docs/decisions.md` (see "FINAL shell verdict").
 
 ## Gotchas
 - Android WebView **print** engine is buggy: trailing blank pages, mid-page breaks, flex unreliable → use `display:block`. Fidelity for math/code/tables is undocumented → prove it in the spike, retest per WebView update.
