@@ -8,6 +8,14 @@ npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# Expo / build artifacts
+expo-env.d.ts
+*.apk
+*.aab
+
+# Test coverage
+coverage/
+
 # Native
 *.orig.*
 *.jks
@@ -23,3 +31,5 @@ yarn-error.*
 # OS / editor
 .DS_Store
 *.tmp
+.expo-shared/
+*.keystore
