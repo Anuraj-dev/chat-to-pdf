@@ -2,7 +2,7 @@
 > Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-07 01:51 (overnight autonomous run)
 
 ## 🚧 In progress / next
-- **NEXT = issue #8: Storage layer (AsyncStorage history).** Then #9 UI, #10 gate, #11 helper.
+- **NEXT = issue #9: UI screens per design/DESIGN-SPEC.md (home+preview+history, one-tap flow).** Then #10 gate, #11 helper, Phase 3 ship.
 - **Push policy tonight**: direct push to `main` is blocked by local permission policy → commits land on `main` locally and are pushed to branch **`overnight-build`** after each issue. Raja: fast-forward `origin/main` to `overnight-build` in the morning.
 - **Phase 3 blocker (pending)**: `EXPO_TOKEN` is NOT in the env and eas-cli is not logged in → EAS build will fail. Raja must `eas login` or export EXPO_TOKEN. Recheck before Phase 3.
 
