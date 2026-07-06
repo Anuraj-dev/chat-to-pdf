@@ -15,6 +15,16 @@ import {
 import { markdownToHtml } from './src/parse';
 import { renderToPdf } from './src/render';
 import { looksLikeMarkdown, useCapture } from './src/capture';
+import {
+  printPdf,
+  savePdf,
+  sharePdf,
+  suggestFilename,
+  PdfTooLargeError,
+  SaveAccessDeniedError,
+  SaveFailedError,
+  SharingUnavailableError,
+} from './src/output';
 
 // Minimal capture screen for issue #6 (paste box + clipboard read). Logic lives
 // in src/capture (useCapture hook + pure helpers); this file is a thin,
@@ -24,7 +34,9 @@ import { looksLikeMarkdown, useCapture } from './src/capture';
 type Status =
   | { kind: 'idle' }
   | { kind: 'working' }
-  | { kind: 'done'; uri: string }
+  // `filename` is snapshotted at render time so editing the paste box after
+  // Create PDF can't mislabel the already-rendered document on Save.
+  | { kind: 'done'; uri: string; filename: string }
   | { kind: 'error'; message: string };
 
 // Design tokens (design/DESIGN-SPEC.md).
@@ -50,10 +62,15 @@ export default function App() {
     dismissSuggestion,
   } = useCapture();
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  // Feedback line under the Share/Print/Save row (success or error, never a crash).
+  const [actionNote, setActionNote] = useState<string | null>(null);
   // Synchronous reentrancy guard: `status` updates async, so a fast double-tap
   // could start two renders before the first setStatus lands. The ref flips
   // immediately.
   const renderingRef = useRef(false);
+  // Same guard for the output actions (share sheet / print dialog / SAF picker
+  // are all slow modal flows a double-tap could stack).
+  const actingRef = useRef(false);
 
   const canCreate = text.trim().length > 0 && status.kind !== 'working';
   const showMarkdownHint = text.trim().length > 0 && !looksLikeMarkdown(text);
@@ -62,10 +79,11 @@ export default function App() {
     if (renderingRef.current) return;
     renderingRef.current = true;
     setStatus({ kind: 'working' });
+    setActionNote(null);
     try {
       const html = markdownToHtml(text);
       const uri = await renderToPdf(html);
-      setStatus({ kind: 'done', uri });
+      setStatus({ kind: 'done', uri, filename: suggestFilename(text) });
     } catch (err) {
       setStatus({
         kind: 'error',
@@ -73,6 +91,37 @@ export default function App() {
       });
     } finally {
       renderingRef.current = false;
+    }
+  }
+
+  // Run one output action (Share / Print / Save); errors become status text.
+  async function runOutputAction(
+    label: string,
+    action: () => Promise<string | void>,
+  ) {
+    if (actingRef.current) return;
+    actingRef.current = true;
+    setActionNote(null);
+    try {
+      const result = await action();
+      if (typeof result === 'string') {
+        setActionNote(`Saved to: ${decodeURIComponent(result)}`);
+      }
+    } catch (err) {
+      if (
+        err instanceof SaveAccessDeniedError ||
+        err instanceof SharingUnavailableError ||
+        err instanceof PdfTooLargeError ||
+        err instanceof SaveFailedError
+      ) {
+        setActionNote(err.message);
+      } else {
+        setActionNote(
+          `${label} failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    } finally {
+      actingRef.current = false;
     }
   }
 
@@ -151,6 +200,38 @@ export default function App() {
             <Text style={styles.statusUri} selectable>
               {status.uri}
             </Text>
+            <View style={styles.actionRow}>
+              <Pressable
+                onPress={() => runOutputAction('Share', () => sharePdf(status.uri))}
+                style={styles.actionButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.actionButtonText}>Share</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => runOutputAction('Print', () => printPdf(status.uri))}
+                style={styles.actionButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.actionButtonText}>Print</Text>
+              </Pressable>
+              <Pressable
+                onPress={() =>
+                  runOutputAction('Save', () =>
+                    savePdf(status.uri, status.filename),
+                  )
+                }
+                style={styles.actionButton}
+                accessibilityRole="button"
+              >
+                <Text style={styles.actionButtonText}>Save</Text>
+              </Pressable>
+            </View>
+            {actionNote !== null && (
+              <Text style={styles.actionNote} selectable>
+                {actionNote}
+              </Text>
+            )}
           </View>
         )}
         {status.kind === 'error' && (
@@ -269,6 +350,31 @@ const styles = StyleSheet.create({
   statusUri: {
     fontSize: 13,
     color: COLORS.muted,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  actionButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.white,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  actionNote: {
+    fontSize: 13,
+    color: COLORS.muted,
+    marginTop: 4,
   },
   statusError: {
     fontSize: 14,
