@@ -2,12 +2,13 @@
 > Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-06
 
 ## 🚧 In progress / next
-- Foundation locked (see spec 0001 + decisions). No code written yet.
-- **Next:** turn spec into a PRD + GitHub issues (to-prd skill), then build in order.
-- **First build task = the render spike** (prove expo-print fidelity for math/code/tables on a real phone before anything else).
+- Foundation locked (spec 0001 + decisions). PRD + issues filed on GitHub. No app code yet.
+- GitHub: https://github.com/Anuraj-dev/chat-to-pdf (private) · Issues #1 (PRD) + #2–#9 (build steps), milestone "v0".
+- **Next / first build task = issue #2? No → issue "Spike" first:** prove expo-print fidelity for math/code/tables on a real phone. Go/no-go before scaffold.
+- Order: Spike → Scaffold → Parse → Render → Capture → Output → Storage → UI.
 
 ## Status
-- Architecture forks resolved. Docs foundation in place. Awaiting PRD → issues, then implementation.
+- Architecture forks resolved, PRD written, 9 GitHub issues created (ready-for-agent). Ready to implement one by one.
 
 ## Architecture map
 - Pipeline: Capture → Parse → Render → Output/Store (all on-device).

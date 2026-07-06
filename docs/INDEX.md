@@ -4,6 +4,7 @@
 | Doc | What it's for |
 |-----|----------------|
 | STATE.md | Current state — read this first on any fresh session |
+| PRD-v0.md | The v0 product requirements doc (also filed as GitHub issue #1) |
 | decisions.md | Append-only log of load-bearing choices + why |
 | conventions.md | Stack, run/test commands, naming |
 | specs/0001-architecture-foundation.md | The v0 architecture foundation — pipeline, locked decisions, module map, risks, build order |
