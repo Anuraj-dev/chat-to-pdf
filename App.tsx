@@ -1,16 +1,165 @@
+import { useRef, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { markdownToHtml } from './src/parse';
+import { renderToPdf } from './src/render';
+import { looksLikeMarkdown, useCapture } from './src/capture';
 
-// Minimal home screen. Navigation is hand-rolled later (no expo-router) — see docs/STATE.md.
+// Minimal capture screen for issue #6 (paste box + clipboard read). Logic lives
+// in src/capture (useCapture hook + pure helpers); this file is a thin,
+// intentionally-plain view that issue #9 re-skins from design/DESIGN-SPEC.md.
+// Navigation is hand-rolled later (no expo-router) — see docs/STATE.md.
+
+type Status =
+  | { kind: 'idle' }
+  | { kind: 'working' }
+  | { kind: 'done'; uri: string }
+  | { kind: 'error'; message: string };
+
+// Design tokens (design/DESIGN-SPEC.md).
+const COLORS = {
+  bg: '#F7F5F0',
+  text: '#1F2933',
+  primary: '#1A5C9C',
+  bannerBg: '#E9F1F9',
+  bannerBorder: '#BDD5EC',
+  muted: '#55606B',
+  disabled: '#DDD9D0',
+  disabledText: '#9AA2AB',
+  inputBorder: '#E3DFD6',
+  white: '#FFFFFF',
+};
+
 export default function App() {
+  const {
+    text,
+    clipboardSuggestion,
+    setText,
+    acceptSuggestion,
+    dismissSuggestion,
+  } = useCapture();
+  const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  // Synchronous reentrancy guard: `status` updates async, so a fast double-tap
+  // could start two renders before the first setStatus lands. The ref flips
+  // immediately.
+  const renderingRef = useRef(false);
+
+  const canCreate = text.trim().length > 0 && status.kind !== 'working';
+  const showMarkdownHint = text.trim().length > 0 && !looksLikeMarkdown(text);
+
+  async function handleCreatePdf() {
+    if (renderingRef.current) return;
+    renderingRef.current = true;
+    setStatus({ kind: 'working' });
+    try {
+      const html = markdownToHtml(text);
+      const uri = await renderToPdf(html);
+      setStatus({ kind: 'done', uri });
+    } catch (err) {
+      setStatus({
+        kind: 'error',
+        message: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      renderingRef.current = false;
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Hello chat-to-pdf</Text>
-        <Text style={styles.subtitle}>
-          Turn an AI chat answer into a clean, printable PDF — on device.
-        </Text>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.avoider}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+        >
+        <Text style={styles.title}>Copy an answer. Get a clean PDF.</Text>
+
+        {clipboardSuggestion !== null && (
+          <View style={styles.banner}>
+            <Text style={styles.bannerTitle}>You copied something — use it?</Text>
+            <Text style={styles.bannerSnippet} numberOfLines={1}>
+              {clipboardSuggestion}
+            </Text>
+            <View style={styles.bannerActions}>
+              <Pressable
+                onPress={dismissSuggestion}
+                style={styles.bannerDismiss}
+                accessibilityRole="button"
+              >
+                <Text style={styles.bannerDismissText}>Dismiss</Text>
+              </Pressable>
+              <Pressable
+                onPress={acceptSuggestion}
+                style={styles.bannerAccept}
+                accessibilityRole="button"
+              >
+                <Text style={styles.bannerAcceptText}>Paste it</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        <TextInput
+          style={styles.input}
+          value={text}
+          onChangeText={setText}
+          multiline
+          textAlignVertical="top"
+          placeholder="Paste an answer you copied from ChatGPT or Gemini"
+          placeholderTextColor={COLORS.muted}
+          accessibilityLabel="Paste box"
+        />
+
+        {showMarkdownHint && (
+          <Text style={styles.hint}>
+            This doesn&apos;t look like markdown — it&apos;ll still convert.
+          </Text>
+        )}
+
+        <Pressable
+          onPress={handleCreatePdf}
+          disabled={!canCreate}
+          style={[styles.cta, !canCreate && styles.ctaDisabled]}
+          accessibilityRole="button"
+        >
+          {status.kind === 'working' ? (
+            <ActivityIndicator color={COLORS.white} />
+          ) : (
+            <Text style={[styles.ctaText, !canCreate && styles.ctaTextDisabled]}>
+              Create PDF
+            </Text>
+          )}
+        </Pressable>
+
+        {status.kind === 'done' && (
+          <View style={styles.statusBox}>
+            <Text style={styles.statusLabel}>PDF created:</Text>
+            <Text style={styles.statusUri} selectable>
+              {status.uri}
+            </Text>
+          </View>
+        )}
+        {status.kind === 'error' && (
+          <View style={styles.statusBox}>
+            <Text style={styles.statusError}>Couldn&apos;t create PDF: {status.message}</Text>
+          </View>
+        )}
+        </ScrollView>
+      </KeyboardAvoidingView>
       <StatusBar style="dark" />
     </SafeAreaView>
   );
@@ -19,25 +168,110 @@ export default function App() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F7F5F0',
+    backgroundColor: COLORS.bg,
+  },
+  avoider: {
+    flex: 1,
   },
   container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    padding: 24,
+    gap: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '700',
-    color: '#1F2933',
-    marginBottom: 12,
+    color: COLORS.text,
   },
-  subtitle: {
+  banner: {
+    backgroundColor: COLORS.bannerBg,
+    borderColor: COLORS.bannerBorder,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    padding: 14,
+    gap: 8,
+  },
+  bannerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  bannerSnippet: {
+    fontSize: 13.5,
+    color: COLORS.muted,
+  },
+  bannerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    alignItems: 'center',
+  },
+  bannerDismiss: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  bannerDismissText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: COLORS.muted,
+  },
+  bannerAccept: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  bannerAcceptText: {
+    fontSize: 14.5,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  input: {
+    minHeight: 220,
+    backgroundColor: COLORS.white,
+    borderColor: COLORS.inputBorder,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 15,
+    lineHeight: 23,
+    color: COLORS.text,
+  },
+  hint: {
+    fontSize: 13,
+    color: COLORS.muted,
+  },
+  cta: {
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ctaDisabled: {
+    backgroundColor: COLORS.disabled,
+  },
+  ctaText: {
     fontSize: 17,
-    lineHeight: 24,
-    color: '#1F2933',
-    textAlign: 'center',
-    opacity: 0.75,
+    fontWeight: '600',
+    color: COLORS.white,
+  },
+  ctaTextDisabled: {
+    color: COLORS.disabledText,
+  },
+  statusBox: {
+    gap: 4,
+  },
+  statusLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  statusUri: {
+    fontSize: 13,
+    color: COLORS.muted,
+  },
+  statusError: {
+    fontSize: 14,
+    color: '#B3261E',
   },
 });
