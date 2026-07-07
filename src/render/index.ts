@@ -11,3 +11,4 @@ export {
 export type { BuildDocumentOptions } from './template';
 export { PRINT_CSS } from './print.css';
 export { renderToPdf, A4_WIDTH_PT, A4_HEIGHT_PT } from './toPdf';
+export type { RenderResult } from './toPdf';

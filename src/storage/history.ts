@@ -25,6 +25,7 @@ import {
   documentDirectory,
   makeDirectoryAsync,
   moveAsync,
+  writeAsStringAsync,
 } from 'expo-file-system/legacy';
 import { markdownToHtml } from '../parse';
 import { renderToPdf } from '../render';
@@ -42,6 +43,11 @@ const PDF_DIR = `${documentDirectory ?? ''}pdfs/`;
 /** Durable path for a given record's PDF. */
 function pdfPath(id: string): string {
   return `${PDF_DIR}${id}.pdf`;
+}
+
+/** Durable path for a given record's rendered HTML snapshot (Preview source). */
+function htmlPath(id: string): string {
+  return `${PDF_DIR}${id}.html`;
 }
 
 /** Time-sortable, collision-resistant id without pulling in a uuid dep. */
@@ -93,14 +99,20 @@ async function writeHistory(docs: HistoryDoc[]): Promise<void> {
   await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(docs));
 }
 
-/** Best-effort PDF file delete — a missing file is fine (idempotent). */
+/** Best-effort file delete — a missing file is fine (idempotent). */
 async function deletePdfFile(uri: string): Promise<void> {
   try {
     await deleteAsync(uri, { idempotent: true });
   } catch (err) {
     // Never let a stray file-system error block a record delete/eviction.
-    console.warn(`[storage] could not delete PDF ${uri}:`, err);
+    console.warn(`[storage] could not delete file ${uri}:`, err);
   }
+}
+
+/** Best-effort delete of every durable file a record owns (PDF + HTML snapshot). */
+async function deleteDocFiles(doc: HistoryDoc): Promise<void> {
+  await deletePdfFile(doc.pdfUri);
+  if (doc.htmlUri) await deletePdfFile(doc.htmlUri);
 }
 
 /**
@@ -134,6 +146,15 @@ export interface SaveDocumentInput {
   sourceMarkdown: string;
   /** The expo-print cache uri returned by renderToPdf — copied to a durable path. */
   cachePdfUri: string;
+  /**
+   * The exact rendered HTML fed to expo-print (RenderResult.html). Persisted as
+   * a snapshot file next to the PDF so Preview shows what was actually rendered.
+   * Optional — a transient/legacy save without it degrades to regenerating from
+   * sourceMarkdown at view time.
+   */
+  html?: string;
+  /** expo-print's numberOfPages for this render — surfaced in Preview (§1e). */
+  pageCount?: number;
 }
 
 /**
@@ -154,12 +175,28 @@ export function saveDocument(input: SaveDocumentInput): Promise<HistoryDoc> {
     await makeDirectoryAsync(PDF_DIR, { intermediates: true });
     await copyAsync({ from: input.cachePdfUri, to: pdfUri });
 
+    // Persist the rendered HTML snapshot next to the PDF (large; kept out of the
+    // AsyncStorage JSON index). A snapshot-write failure must not lose the PDF —
+    // fall back to a record without htmlUri (Preview regenerates from markdown).
+    let htmlUri: string | undefined;
+    if (input.html !== undefined) {
+      const path = htmlPath(id);
+      try {
+        await writeAsStringAsync(path, input.html);
+        htmlUri = path;
+      } catch (err) {
+        console.warn(`[storage] could not write HTML snapshot ${path}:`, err);
+      }
+    }
+
     const record: HistoryDoc = {
       id,
       title: input.title,
       sourceMarkdown: input.sourceMarkdown,
       pdfUri,
       createdAt: Date.now(),
+      ...(htmlUri !== undefined ? { htmlUri } : {}),
+      ...(input.pageCount !== undefined ? { pageCount: input.pageCount } : {}),
     };
 
     const next = [record, ...(await readHistory())];
@@ -169,14 +206,14 @@ export function saveDocument(input: SaveDocumentInput): Promise<HistoryDoc> {
     try {
       await writeHistory(kept);
     } catch (err) {
-      // Record never landed — remove the durable copy so it can't orphan.
-      await deletePdfFile(pdfUri);
+      // Record never landed — remove the durable copies so they can't orphan.
+      await deleteDocFiles(record);
       throw err;
     }
 
     // Evicted files are deleted only AFTER the write succeeded — a failed
     // write must never leave surviving records pointing at deleted files.
-    await Promise.all(evicted.map((doc) => deletePdfFile(doc.pdfUri)));
+    await Promise.all(evicted.map((doc) => deleteDocFiles(doc)));
 
     return record;
   });
@@ -199,7 +236,7 @@ export function deleteDocument(id: string): Promise<void> {
     const history = await readHistory();
     const target = history.find((doc) => doc.id === id);
     await writeHistory(history.filter((doc) => doc.id !== id));
-    if (target) await deletePdfFile(target.pdfUri);
+    if (target) await deleteDocFiles(target);
   });
 }
 
@@ -217,10 +254,13 @@ export function deleteDocument(id: string): Promise<void> {
  */
 export function regeneratePdf(id: string): Promise<string> {
   return withLock(async () => {
-    const doc = (await readHistory()).find((d) => d.id === id);
+    const history = await readHistory();
+    const doc = history.find((d) => d.id === id);
     if (!doc) throw new Error(`regeneratePdf: no document with id ${id}`);
 
-    const cacheUri = await renderToPdf(markdownToHtml(doc.sourceMarkdown));
+    const { uri: cacheUri, pageCount, html } = await renderToPdf(
+      markdownToHtml(doc.sourceMarkdown),
+    );
 
     // Stage the new bytes NEXT TO the final path, then swap: old file must
     // survive any failure before the new copy exists.
@@ -236,6 +276,26 @@ export function regeneratePdf(id: string): Promise<string> {
     // rather than copy: copyAsync won't overwrite an existing destination.
     await deletePdfFile(doc.pdfUri);
     await moveAsync({ from: tmpUri, to: doc.pdfUri });
+
+    // Refresh the HTML snapshot + page count so Preview never shows a stale
+    // render after a re-render. Snapshot-write failure is non-fatal (Preview
+    // falls back to regenerating from sourceMarkdown).
+    const htmlFile = htmlPath(id);
+    let htmlUri = doc.htmlUri;
+    try {
+      await writeAsStringAsync(htmlFile, html);
+      htmlUri = htmlFile;
+    } catch (err) {
+      console.warn(`[storage] could not refresh HTML snapshot ${htmlFile}:`, err);
+    }
+
+    // Persist updated metadata (pageCount + htmlUri) for this record in place.
+    const updated: HistoryDoc = {
+      ...doc,
+      pageCount,
+      ...(htmlUri !== undefined ? { htmlUri } : {}),
+    };
+    await writeHistory(history.map((d) => (d.id === id ? updated : d)));
 
     return doc.pdfUri;
   });

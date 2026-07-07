@@ -5,6 +5,7 @@ jest.mock('expo-file-system/legacy', () => ({
   copyAsync: jest.fn(),
   deleteAsync: jest.fn(),
   moveAsync: jest.fn(),
+  writeAsStringAsync: jest.fn(),
 }));
 
 // parse/render public API — only regeneratePdf reaches these; keep internals untouched.
@@ -34,6 +35,7 @@ import {
   deleteAsync,
   makeDirectoryAsync,
   moveAsync,
+  writeAsStringAsync,
 } from 'expo-file-system/legacy';
 import { markdownToHtml } from '../../parse';
 import { renderToPdf } from '../../render';
@@ -52,6 +54,7 @@ const copyMock = copyAsync as jest.Mock;
 const deleteMock = deleteAsync as jest.Mock;
 const mkdirMock = makeDirectoryAsync as jest.Mock;
 const moveMock = moveAsync as jest.Mock;
+const writeFileMock = writeAsStringAsync as jest.Mock;
 const renderMock = renderToPdf as jest.Mock;
 const setItem = AsyncStorage.setItem as jest.Mock;
 
@@ -64,7 +67,12 @@ beforeEach(() => {
   deleteMock.mockResolvedValue(undefined);
   mkdirMock.mockResolvedValue(undefined);
   moveMock.mockResolvedValue(undefined);
-  renderMock.mockResolvedValue('file:///cache/Print/regen.pdf');
+  writeFileMock.mockResolvedValue(undefined);
+  renderMock.mockResolvedValue({
+    uri: 'file:///cache/Print/regen.pdf',
+    pageCount: 3,
+    html: '<html>regen</html>',
+  });
 });
 
 describe('saveDocument — copy to durable dir + prepend record', () => {
@@ -138,6 +146,70 @@ describe('saveDocument — copy to durable dir + prepend record', () => {
     expect(list.length).toBe(2);
     expect(list.map((d) => d.id).sort()).toEqual([a.id, b.id].sort());
   });
+
+  it('writes the HTML snapshot next to the PDF and stores htmlUri + pageCount', async () => {
+    const doc = await saveDocument({
+      title: 'A',
+      sourceMarkdown: 'a',
+      cachePdfUri: CACHE,
+      html: '<html>snap</html>',
+      pageCount: 2,
+    });
+
+    expect(writeFileMock).toHaveBeenCalledWith(
+      `file:///docdir/pdfs/${doc.id}.html`,
+      '<html>snap</html>',
+    );
+    expect(doc.htmlUri).toBe(`file:///docdir/pdfs/${doc.id}.html`);
+    expect(doc.pageCount).toBe(2);
+    // snapshot is a file, NOT stuffed into the AsyncStorage JSON index
+    const stored = setItem.mock.calls.at(-1)?.[1] as string;
+    expect(stored).not.toContain('<html>snap</html>');
+  });
+
+  it('omits htmlUri/pageCount for a legacy-style save (no html/pageCount given)', async () => {
+    const doc = await saveDocument({ title: 'A', sourceMarkdown: 'a', cachePdfUri: CACHE });
+    expect(writeFileMock).not.toHaveBeenCalled();
+    expect('htmlUri' in doc).toBe(false);
+    expect('pageCount' in doc).toBe(false);
+  });
+
+  it('still saves the record (without htmlUri) when the snapshot write fails', async () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    writeFileMock.mockRejectedValue(new Error('disk full'));
+
+    const doc = await saveDocument({
+      title: 'A',
+      sourceMarkdown: 'a',
+      cachePdfUri: CACHE,
+      html: '<html>snap</html>',
+      pageCount: 2,
+    });
+
+    expect(doc.htmlUri).toBeUndefined();
+    expect(doc.pageCount).toBe(2); // page count still recorded
+    expect((await getDocument(doc.id))?.pdfUri).toBe(doc.pdfUri); // PDF kept
+    warn.mockRestore();
+  });
+
+  it('on a record-write failure, deletes BOTH the PDF and the HTML snapshot', async () => {
+    setItem.mockRejectedValueOnce(new Error('storage full'));
+
+    await expect(
+      saveDocument({
+        title: 'X',
+        sourceMarkdown: 'x',
+        cachePdfUri: CACHE,
+        html: '<html>snap</html>',
+        pageCount: 1,
+      }),
+    ).rejects.toThrow(/storage full/);
+
+    const pdfTo = copyMock.mock.calls[0][0].to as string;
+    const htmlTo = writeFileMock.mock.calls[0][0] as string;
+    expect(deleteMock).toHaveBeenCalledWith(pdfTo, { idempotent: true });
+    expect(deleteMock).toHaveBeenCalledWith(htmlTo, { idempotent: true });
+  });
 });
 
 describe('deleteDocument — record + file, tolerant of missing file', () => {
@@ -147,6 +219,19 @@ describe('deleteDocument — record + file, tolerant of missing file', () => {
 
     expect(await listDocuments()).toEqual([]);
     expect(deleteMock).toHaveBeenCalledWith(doc.pdfUri, { idempotent: true });
+  });
+
+  it('deletes the HTML snapshot too when the record has one', async () => {
+    const doc = await saveDocument({
+      title: 'A',
+      sourceMarkdown: 'a',
+      cachePdfUri: CACHE,
+      html: '<html>snap</html>',
+    });
+    await deleteDocument(doc.id);
+
+    expect(deleteMock).toHaveBeenCalledWith(doc.pdfUri, { idempotent: true });
+    expect(deleteMock).toHaveBeenCalledWith(doc.htmlUri, { idempotent: true });
   });
 
   it('a delete-file error does not reject the record delete', async () => {
@@ -236,9 +321,18 @@ describe('regeneratePdf — re-render markdown, replace file, same uri', () => {
     expect(deleteMock.mock.invocationCallOrder[0]).toBeGreaterThan(
       copyMock.mock.invocationCallOrder[0],
     );
-    // same durable uri, record untouched
+    // same durable uri; record metadata refreshed (page count + html snapshot)
     expect(uri).toBe(doc.pdfUri);
-    expect(await getDocument(doc.id)).toEqual(doc);
+    expect(writeFileMock).toHaveBeenCalledWith(
+      `file:///docdir/pdfs/${doc.id}.html`,
+      '<html>regen</html>',
+    );
+    const after = await getDocument(doc.id);
+    expect(after).toEqual({
+      ...doc,
+      pageCount: 3,
+      htmlUri: `file:///docdir/pdfs/${doc.id}.html`,
+    });
   });
 
   it('a failed staging copy leaves the old durable PDF and record untouched', async () => {

@@ -9,7 +9,7 @@ const printMock = Print.printToFileAsync as jest.Mock;
 describe('renderToPdf — expo-print wrapper', () => {
   beforeEach(() => {
     printMock.mockReset();
-    printMock.mockResolvedValue({ uri: 'file:///data/out.pdf' });
+    printMock.mockResolvedValue({ uri: 'file:///data/out.pdf', numberOfPages: 2 });
   });
 
   it('exports the locked A4 point dimensions', () => {
@@ -34,8 +34,11 @@ describe('renderToPdf — expo-print wrapper', () => {
     expect(arg.html).toContain('data:font/woff2;base64,');
   });
 
-  it('returns the file URI from expo-print', async () => {
-    const uri = await renderToPdf('<p>x</p>');
-    expect(uri).toBe('file:///data/out.pdf');
+  it('returns the file URI, page count and rendered html from expo-print', async () => {
+    const body = '<p>x</p>';
+    const result = await renderToPdf(body);
+    expect(result.uri).toBe('file:///data/out.pdf');
+    expect(result.pageCount).toBe(2);
+    expect(result.html).toBe(buildDocument(body));
   });
 });
