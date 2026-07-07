@@ -35,10 +35,12 @@ body {
 }
 
 /* Prose root: cap the measure to ~66–75 chars so long paragraphs don't run the
-   full page width (issue #10 defect #7). em-relative so it tracks font-size. */
+   full page width (issue #10 defect #7). em-relative so it tracks font-size.
+   Georgia's average advance is ~0.48em/char, so 34em ≈ 71 chars — inside the
+   66–75 target. (40em ≈ 83 chars overshot the spec's upper bound.) */
 .doc {
   display: block;
-  max-width: 40em;
+  max-width: 34em;
 }
 
 /* ---------- Type scale (~1.3 ratio, 4pt vertical rhythm) ---------- */
