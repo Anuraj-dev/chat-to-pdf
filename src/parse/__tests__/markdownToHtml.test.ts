@@ -34,12 +34,37 @@ describe('markdownToHtml — core markdown', () => {
     expect(html).toContain('<td>1</td>');
   });
 
-  it('renders fenced code with a language class', () => {
+  it('renders fenced code as a highlighted, language-labeled code card', () => {
     const md = '```python\nprint("hi")\n```';
     const html = markdownToHtml(md);
-    expect(html).toContain('<pre>');
-    expect(html).toContain('class="language-python"');
+    expect(html).toContain('class="codeblock"');
+    expect(html).toContain('class="hljs language-python"');
+    expect(html).toContain('codeblock-lang">python');
+    // highlighted, but the source token text survives inside the spans
     expect(html).toContain('print');
+  });
+
+  it('renders an unknown/blank language as a plain "code" card, escaped not highlighted', () => {
+    const html = markdownToHtml('```\n<b> tags & "quotes"\n```');
+    expect(html).toContain('class="codeblock"');
+    expect(html).toContain('codeblock-lang">code');
+    expect(html).toContain('class="hljs"'); // no language- class when unknown
+    expect(html).not.toContain('language-');
+    // content is HTML-escaped, never injected as markup
+    expect(html).toContain('&lt;b&gt; tags &amp; ');
+    expect(html).not.toContain('<b>');
+  });
+
+  it('marks a very tall code block .breakable so it may split across pages', () => {
+    const code = Array.from({ length: 60 }, (_, i) => `line ${i}`).join('\n');
+    const html = markdownToHtml('```\n' + code + '\n```');
+    expect(html).toContain('class="codeblock breakable"');
+  });
+
+  it('keeps a short code block un-breakable (whole)', () => {
+    const html = markdownToHtml('```js\nconst x = 1;\n```');
+    expect(html).toContain('class="codeblock"');
+    expect(html).not.toContain('codeblock breakable');
   });
 });
 
@@ -166,9 +191,11 @@ describe('markdownToHtml — representative AI answers', () => {
       '~~~~',
     ].join('\n');
     const html = markdownToHtml(md);
-    expect(html).toContain('class="language-python"');
-    expect(html).toContain('class="language-javascript"');
-    expect(html).toContain('def add');
+    expect(html).toContain('class="hljs language-python"');
+    expect(html).toContain('class="hljs language-javascript"');
+    // 'def' is highlighted as a python keyword (so 'def add' is now split across
+    // spans — assert the highlighted token instead of the raw substring).
+    expect(html).toContain('hljs-keyword">def');
     // The outer four-tilde wrapper must be consumed, not rendered as a code block.
     expect(html).not.toContain('~~~~');
   });
@@ -212,7 +239,7 @@ describe('markdownToHtml — representative AI answers', () => {
     expect(html).toContain('<h1>Report</h1>');
     expect(html).toContain('<ul>');
     expect(html).toContain('<blockquote>');
-    expect(html).toContain('class="language-python"');
+    expect(html).toContain('class="hljs language-python"');
     expect(html).toContain('<table>');
     expect(html).toContain('class="katex"');
     expect(html).not.toContain('$$');

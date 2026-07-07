@@ -7,6 +7,7 @@
 
 import { PRINT_CSS } from './print.css';
 import { KATEX_CSS } from './katex/katexCss';
+import { CODE_FONT_CSS } from './codeFont/codeFontCss';
 
 export interface BuildDocumentOptions {
   /** <title> of the document. Not printed on the page (Android WebView blocks
@@ -90,10 +91,10 @@ function escapeHtml(s: string): string {
 /**
  * Build the full self-contained print document from parsed body HTML.
  *
- * The output has zero external references: KaTeX CSS is inlined with its fonts
- * embedded as base64 woff2 data URIs, and the body/heading/mono fonts are
- * system fonts. This is mandatory — expo-print's Android WebView has no network
- * at print time (spec 0001 §5).
+ * The output has zero external references: KaTeX CSS and the JetBrains Mono code
+ * font are inlined with their fonts embedded as base64 woff2 data URIs; the
+ * body/heading fonts are system fonts. This is mandatory — expo-print's Android
+ * WebView has no network at print time (spec 0001 §5).
  */
 export function buildDocument(bodyHtml: string, opts: BuildDocumentOptions = {}): string {
   const title = escapeHtml(opts.title ?? 'chat-to-pdf');
@@ -106,6 +107,7 @@ export function buildDocument(bodyHtml: string, opts: BuildDocumentOptions = {})
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
+<style>${CODE_FONT_CSS}</style>
 <style>${KATEX_CSS}</style>
 <style>${PRINT_CSS}</style>
 </head>

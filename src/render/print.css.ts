@@ -109,40 +109,121 @@ h1, h2, h3, h4 {
 .math-error-block { display: block; margin: 12pt 0; }
 
 /* ---------- Code ----------
-   Tight and small — more content per line than the old loose blocks, matching
-   ChatGPT. Subtle gray fill, hairline border (not a heavy rounded card). Short
-   blocks stay whole; blocks taller than ~1 page get the .breakable class from
-   the renderer (template.ts) so they may split rather than orphan a giant block
-   onto the next page (issue #10, defect #1). */
-pre {
+   Fenced & indented code render as a carded .codeblock (parse/markdownToHtml.ts
+   renderCodeBlock): a header bar (decorative dots + language label) over a
+   syntax-highlighted body. block/table layout ONLY — Android WebView print
+   mis-paginates flex/grid. Short blocks stay whole via break-inside:avoid on the
+   WRAPPER; blocks taller than ~1 page get a .breakable class from the renderer so
+   they may split rather than orphan a giant block (issue #10, defect #1). */
+.codeblock {
   display: block;
+  margin: 12pt 0;
+  border: 0.75pt solid #d0d7de;
+  border-radius: 6px;
+  overflow: hidden;                /* clip the flat-topped header into the radius */
   break-inside: avoid;
   page-break-inside: avoid;
-  background: #f6f8fa;
-  border: 0.75pt solid #e3e7eb;
-  border-radius: 4px;
-  padding: 7pt 9pt;
-  margin: 10pt 0;
-  white-space: pre-wrap;       /* wrap long lines — never clip at the right margin */
-  word-break: break-word;
-  overflow: hidden;
 }
-pre.breakable {
+.codeblock.breakable {
   break-inside: auto;
   page-break-inside: auto;
 }
-pre code, code {
-  font-family: "Roboto Mono", "DejaVu Sans Mono", "Consolas", "Menlo", "Courier New", monospace;
-  font-size: 8.5pt;
-  line-height: 1.35;
+
+/* Header bar: display:table (NOT flex) puts the dots left, language label right
+   without any flex/grid alignment the print engine can't do. Padding lives on the
+   CELLS, never on the table — a display:table with width:100% is content-box, so
+   padding on the table itself would add to 100% and overflow the card (clipping
+   the label under overflow:hidden). Cell padding stays inside the 100%. */
+.codeblock-head {
+  display: table;
+  width: 100%;
+  background: #eceef1;
+  border-bottom: 0.75pt solid #d0d7de;
+  font-family: -apple-system, system-ui, "Roboto", "Segoe UI", Arial, sans-serif;
+  font-size: 7.5pt;
+  color: #57606a;
 }
-/* Inline code inside prose — tinted chip, not a full block. */
+.codeblock-dots {
+  display: table-cell;
+  width: 1%;
+  white-space: nowrap;
+  vertical-align: middle;
+  padding: 4pt 6pt 4pt 10pt;
+}
+.codeblock-lang {
+  display: table-cell;
+  text-align: right;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.5pt;
+  font-weight: 700;
+  padding: 4pt 10pt 4pt 6pt;
+}
+/* Uniform mid-gray dots — deliberately NOT red/yellow/green: three gray circles
+   of differing luminance would read as a warning/error signal on a mono printer.
+   Decorative rhythm only. */
+.codeblock-dots i {
+  display: inline-block;
+  width: 5.5pt;
+  height: 5.5pt;
+  border-radius: 50%;
+  margin-right: 3.5pt;
+  background: #c8ccd1;
+}
+
+.codeblock-body {
+  display: block;
+  margin: 0;
+  padding: 9pt 11pt;
+  background: #f8f9fb;
+  white-space: pre-wrap;           /* wrap long lines — never clip at the right margin */
+  word-break: break-word;
+  overflow: hidden;
+  break-inside: auto;              /* the wrapper owns the break decision, not this */
+  page-break-inside: auto;
+}
+
+/* Shared monospace: JetBrains Mono first (embedded woff2 — codeFontCss.ts), then
+   system mono fallbacks. Ligatures OFF — a combined != or => glyph can read as a
+   typo to a non-technical reader printing a command. */
+pre code, code {
+  font-family: "JetBrains Mono", "DejaVu Sans Mono", "Consolas", "Menlo", "Courier New", monospace;
+  font-variant-ligatures: none;
+  font-feature-settings: "calt" 0, "liga" 0;
+}
+.codeblock-body code {
+  display: block;
+  font-size: 8.5pt;
+  line-height: 1.5;
+  color: #1f2328;
+}
+/* Inline code inside prose — a hairline-bordered chip, never confusable with a
+   block card. */
 :not(pre) > code {
   background: #eef1f4;
-  padding: 0.5pt 3pt;
-  border-radius: 3px;
+  border: 0.5pt solid #e1e4e8;
+  padding: 0.5pt 4pt;
+  border-radius: 4px;
   font-size: 8.75pt;
 }
+
+/* ---------- Syntax highlighting (grayscale-safe) ----------
+   highlight.js class contract. Every color sits between near-black (#1f2328) and
+   mid-gray (#6e7781): hue is decorative only — WEIGHT and ITALIC carry the real
+   distinction, so a black-and-white printout never collapses two token types
+   into "look the same". */
+.hljs-comment, .hljs-quote { color: #6e7781; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-literal, .hljs-doctag, .hljs-section, .hljs-name { color: #24292f; font-weight: 700; }
+.hljs-string, .hljs-attr, .hljs-meta .hljs-string, .hljs-template-tag, .hljs-regexp { color: #3b4754; }
+.hljs-number, .hljs-built_in, .hljs-type, .hljs-symbol, .hljs-bullet { color: #3b4754; font-weight: 700; }
+.hljs-title, .hljs-title.function_, .hljs-title.class_, .hljs-selector-id, .hljs-selector-class { color: #1f2328; font-weight: 700; }
+.hljs-variable, .hljs-attribute, .hljs-params, .hljs-meta { color: #57606a; }
+.hljs-tag { color: #3b4754; }
+.hljs-deletion { color: #57606a; text-decoration: line-through; }
+.hljs-addition { color: #24292f; text-decoration: underline; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+.hljs-subst { color: inherit; }
 
 /* ---------- Tables ---------- */
 table {

@@ -35,9 +35,11 @@ describe('print.css — load-bearing rules (ChatGPT-parity redesign quality gate
     expect(PRINT_CSS).toMatch(/thead\s*\{[^}]*display:\s*table-header-group/);
   });
 
-  it('keeps short pre blocks whole but lets .breakable ones split', () => {
-    expect(PRINT_CSS).toMatch(/pre\s*\{[^}]*page-break-inside:\s*avoid/);
-    expect(PRINT_CSS).toMatch(/pre\.breakable\s*\{[^}]*page-break-inside:\s*auto/);
+  it('keeps short code cards whole but lets .breakable ones split', () => {
+    // The break decision lives on the .codeblock WRAPPER (the inner <pre> can't
+    // express "keep header+body together but allow tall bodies to split").
+    expect(PRINT_CSS).toMatch(/\.codeblock\s*\{[^}]*page-break-inside:\s*avoid/);
+    expect(PRINT_CSS).toMatch(/\.codeblock\.breakable\s*\{[^}]*page-break-inside:\s*auto/);
     expect(PRINT_CSS).toMatch(/table\.breakable\s*\{[^}]*page-break-inside:\s*auto/);
   });
 
@@ -154,20 +156,59 @@ describe('print.css — load-bearing rules (ChatGPT-parity redesign quality gate
     );
   });
 
-  // ---- code blocks: tight small mono, ~8.5pt, lh 1.35, subtle fill + hairline ----
-  it('sets code mono small (~8.5pt) at the tight line-height 1.35 on a light bg', () => {
-    const code = PRINT_CSS.match(/pre code, code\s*\{[^}]*\}/);
-    expect(code).not.toBeNull();
-    const size = parseFloat(code![0].match(/font-size:\s*(\d+(?:\.\d+)?)pt/)![1]);
+  // ---- code cards: carded block, ~8.5pt JetBrains Mono body on a light fill ----
+  it('sets the code body mono ~8.5pt on a light card fill', () => {
+    const codeBody = PRINT_CSS.match(/\.codeblock-body code\s*\{[^}]*\}/);
+    expect(codeBody).not.toBeNull();
+    const size = parseFloat(codeBody![0].match(/font-size:\s*(\d+(?:\.\d+)?)pt/)![1]);
     expect(size).toBeGreaterThanOrEqual(8);
     expect(size).toBeLessThanOrEqual(9);
-    expect(code![0]).toMatch(/line-height:\s*1\.35/);
-    expect(PRINT_CSS).toMatch(/pre\s*\{[^}]*background:\s*#f6f8fa/);
-    expect(code![0]).toMatch(/font-family:[^}]*monospace/);
+    expect(PRINT_CSS).toMatch(/\.codeblock-body\s*\{[^}]*background:\s*#f8f9fb/);
   });
 
-  it('renders inline code as a tinted chip, not a full block', () => {
-    expect(PRINT_CSS).toMatch(/:not\(pre\)\s*>\s*code\s*\{[^}]*background:/);
+  it('puts JetBrains Mono first in the shared mono stack, with a monospace fallback', () => {
+    const mono = PRINT_CSS.match(/pre code, code\s*\{[^}]*\}/);
+    expect(mono).not.toBeNull();
+    expect(mono![0]).toMatch(/"JetBrains Mono"/);
+    expect(mono![0]).toMatch(/monospace/);
+  });
+
+  it('disables code ligatures (a combined != or => glyph reads as a typo)', () => {
+    const mono = PRINT_CSS.match(/pre code, code\s*\{[^}]*\}/);
+    expect(mono![0]).toMatch(/font-variant-ligatures:\s*none/);
+  });
+
+  it('renders the code card as a bordered rounded block that clips its header', () => {
+    const card = PRINT_CSS.match(/\.codeblock\s*\{[^}]*\}/);
+    expect(card).not.toBeNull();
+    expect(card![0]).toMatch(/border:\s*0\.75pt\s+solid/);
+    expect(card![0]).toMatch(/border-radius:/);
+    expect(card![0]).toMatch(/overflow:\s*hidden/);
+  });
+
+  it('lays the code header bar out with display:table (never flex/grid)', () => {
+    expect(PRINT_CSS).toMatch(/\.codeblock-head\s*\{[^}]*display:\s*table\b/);
+  });
+
+  it('uses uniform mid-gray code dots — NOT semantic red/yellow/green', () => {
+    const dots = PRINT_CSS.match(/\.codeblock-dots i\s*\{[^}]*\}/);
+    expect(dots).not.toBeNull();
+    // A single flat gray fill: grayscale-safe, no false status signal.
+    expect(dots![0]).toMatch(/background:\s*#c8ccd1/);
+    expect(dots![0]).not.toMatch(/#e?[0-9a-f]*(red|green)/i);
+  });
+
+  it('renders inline code as a hairline-bordered chip, not a full block', () => {
+    const chip = PRINT_CSS.match(/:not\(pre\)\s*>\s*code\s*\{[^}]*\}/);
+    expect(chip).not.toBeNull();
+    expect(chip![0]).toMatch(/background:/);
+    expect(chip![0]).toMatch(/border:\s*0\.5pt\s+solid/);
+  });
+
+  // ---- syntax highlighting: grayscale-safe (weight/italic carry meaning) ----
+  it('keeps the syntax theme grayscale-safe: comments italic, keywords bold', () => {
+    expect(PRINT_CSS).toMatch(/\.hljs-comment[^{]*\{[^}]*font-style:\s*italic/);
+    expect(PRINT_CSS).toMatch(/\.hljs-keyword[^{]*\{[^}]*font-weight:\s*700/);
   });
 
   // ---- tables: sans header font + tinted header row ----
