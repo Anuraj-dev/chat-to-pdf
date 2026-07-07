@@ -130,6 +130,28 @@ app.json                            # CHANGED — register plugin; keep version 
 - **First update is untestable until two releases exist** — bootstrap by tagging `v1.0.0` now (current
   build) so a future `v1.0.1` has something to update *from*.
 
+## 9a. On-device verification (2026-07-07)
+
+Full loop driven on the Motorola Edge 60 Fusion (v1.0.0 → v1.0.1, both real EAS APKs
+published as GitHub Releases). Results:
+
+- ✅ **Check** — anonymous `/releases/latest` returned `v1.0.1` + notes; sheet showed "Version 1.0.1 is available".
+- ✅ **Download** — 60MB streamed with live progress (`createDownloadResumable` callback fired, 0→100%).
+- ✅ **Install intent + FileProvider** — Expo's built-in `getContentUriAsync` content URI was **ACCEPTED** by
+  the package installer (the #1 risk). **No custom FileProvider plugin is needed** — the §7 fallback is closed.
+- ✅ **Unknown-sources gate** — `openUnknownSourcesSettings` deep-linked to this app's toggle; after granting,
+  the installer showed "Do you want to update this app?" → in-place update succeeded (versionName flipped to 1.0.1).
+- ✅ **Signing continuity** — the v1.0.1 APK installed as an UPDATE (not a signature conflict), confirming the
+  same EAS keystore across builds.
+- ✅ **UpToDate state** — re-checking on 1.0.1 shows "You're on the latest version."
+- ⚠️ **REPO MUST BE PUBLIC** — a private repo returns 404 to the anonymous API for BOTH the release check and
+  the asset download. `Anuraj-dev/chat-to-pdf` was made **public** to unblock this. (Keep it public, or move
+  releases to a public host.)
+- ❌ **KNOWN GAP — SHA-256 verify fails on-device.** `sha256OfFile` threw (the ~60MB base64→bytes round-trip
+  OOMs / exceeds `expo-crypto.digest`), so it degraded to the non-blocking `Unverified` warning ("Couldn't
+  verify the download on this device — install with caution") and still installed. **Follow-up:** chunk the
+  read/hash (stream the file in slices) so verification actually runs; until then checksum protection is inert.
+
 ## 10. Out of scope (this spec)
 
 Background/auto update checks, delta updates, iOS, Play In-App Updates API, changelog history browser,
