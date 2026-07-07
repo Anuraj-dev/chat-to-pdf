@@ -41,29 +41,43 @@ describe('HELPER_INSTRUCTION (plain-language next step)', () => {
   });
 });
 
-describe('HELPER_PROMPTS — verbatim ship texts', () => {
-  it('ChatGPT prompt is exact (incl. four-tilde fence + \\( \\) / \\[ \\] ban + Unicode ban)', () => {
-    expect(HELPER_PROMPTS.chatgpt).toBe(
-      'Reproduce your previous answer in full, word for word — every section, list item, code block, table, and equation. Do not summarize, shorten, or omit anything. Output it as raw GitHub-flavored Markdown inside ONE code block fenced with four tildes (~~~~) so inner ``` fences survive. Rules: math must use $...$ and $$...$$ LaTeX delimiters — never \\( \\), \\[ \\], or Unicode symbols like ² or √; code stays in fenced blocks with language tags; tables as Markdown tables. Output only the fenced block — no text before or after it.',
-    );
+describe('HELPER_PROMPTS — v2 whole-conversation compilation', () => {
+  const ids: AiId[] = ['chatgpt', 'gemini', 'claude', 'other'];
+
+  it('every prompt compiles the WHOLE conversation, not just the last answer', () => {
+    for (const id of ids) {
+      expect(HELPER_PROMPTS[id]).toContain('ENTIRE conversation');
+      expect(HELPER_PROMPTS[id].toLowerCase()).toContain('across all turns');
+    }
   });
 
-  it('Gemini prompt is exact', () => {
-    expect(HELPER_PROMPTS.gemini).toBe(
-      'Take your previous answer and output it again, complete and unabridged — nothing summarized or dropped. Format it as plain GitHub-flavored Markdown source text (not rendered), wrapped in a single code block fenced with four tildes (~~~~). Keep all inner code blocks as ``` fences with language tags, all math as $...$ / $$...$$ LaTeX, all tables as Markdown pipe tables. Print nothing outside the tilde fence.',
-    );
+  it('every prompt demands heading structure (# title, ## topics, ### subsections)', () => {
+    for (const id of ids) {
+      expect(HELPER_PROMPTS[id]).toContain('# title');
+      expect(HELPER_PROMPTS[id]).toContain('##');
+      expect(HELPER_PROMPTS[id]).toContain('###');
+    }
   });
 
-  it('Claude prompt is exact (incl. four-backtick fence + NOT as an artifact)', () => {
-    expect(HELPER_PROMPTS.claude).toBe(
-      'Please repeat your previous answer in its entirety — verbatim content, nothing condensed or left out. Respond directly in the chat as a normal message, NOT as an artifact or document. Wrap the whole thing in one code block using a four-backtick fence (````) so inner triple-backtick code blocks stay intact. Use GitHub-flavored Markdown throughout: $...$ / $$...$$ for math, fenced code with language tags, pipe tables. No introduction or closing remark — the fenced block only.',
-    );
+  it('every prompt keeps only the final version of corrected answers', () => {
+    for (const id of ids) {
+      expect(HELPER_PROMPTS[id].toLowerCase()).toMatch(/final (correct )?version/);
+    }
   });
 
-  it('Other/Generic prompt is exact', () => {
-    expect(HELPER_PROMPTS.other).toBe(
-      'Repeat your previous answer in full — verbatim, no summarizing, no omissions. Output it as raw GitHub-flavored Markdown inside a single code block fenced with four tildes (~~~~). Requirements: math in $...$ / $$...$$ LaTeX (no Unicode math symbols), code in ``` fenced blocks with language tags, tables as Markdown tables. Nothing before or after the fence.',
-    );
+  it('every prompt excludes chat filler and the user\'s own messages', () => {
+    for (const id of ids) {
+      expect(HELPER_PROMPTS[id].toLowerCase()).toMatch(/filler|chat noise/);
+      expect(HELPER_PROMPTS[id].toLowerCase()).toContain('my');
+    }
+  });
+
+  it('every prompt forbids summarizing / omissions', () => {
+    for (const id of ids) {
+      expect(HELPER_PROMPTS[id].toLowerCase()).toMatch(
+        /do not summarize|no summarizing|nothing summarized|nothing condensed/,
+      );
+    }
   });
 });
 
@@ -87,10 +101,10 @@ describe('HELPER_PROMPTS — structural invariants (the fence tricks are load-be
     expect(HELPER_PROMPTS.claude).toContain('NOT as an artifact');
   });
 
-  it('every prompt insists on full/verbatim re-output', () => {
+  it('every prompt insists on full/complete content', () => {
     for (const id of ids) {
       expect(HELPER_PROMPTS[id].toLowerCase()).toMatch(
-        /verbatim|word for word|in full|complete/,
+        /in full|complete|unabridged|full substance|full content/,
       );
     }
   });
