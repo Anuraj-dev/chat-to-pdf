@@ -1,4 +1,4 @@
-import { suggestFilename } from '../filename';
+import { suggestFilename, sanitizeUserFilename } from '../filename';
 
 // Pin the date so the suffix is deterministic.
 const NOW = new Date(2026, 6, 7); // 2026-07-07 local
@@ -49,5 +49,39 @@ describe('suggestFilename — derive a SAF-safe, date-suffixed name', () => {
   it('produces only SAF-safe characters (lowercase alnum, hyphen, dot)', () => {
     const name = suggestFilename('# A/B: <weird*name?> "quotes" | pipes\\slashes', NOW);
     expect(name).toMatch(/^[a-z0-9-]+\.pdf$/);
+  });
+});
+
+describe('sanitizeUserFilename — user-typed name → filesystem-safe base', () => {
+  it('preserves human casing, spaces and legal punctuation', () => {
+    expect(sanitizeUserFilename('My Notes (2026) - Draft')).toBe('My Notes (2026) - Draft');
+  });
+
+  it('strips path separators and reserved chars, collapsing the gaps', () => {
+    expect(sanitizeUserFilename('My Notes: Quadratic / Formula?')).toBe(
+      'My Notes Quadratic Formula',
+    );
+  });
+
+  it('drops a trailing .pdf the user typed (SAF re-appends it)', () => {
+    expect(sanitizeUserFilename('report.pdf')).toBe('report');
+  });
+
+  it('trims leading/trailing dots and whitespace', () => {
+    expect(sanitizeUserFilename('  ...hidden..  ')).toBe('hidden');
+  });
+
+  it('caps very long names to 80 chars', () => {
+    const name = sanitizeUserFilename('x'.repeat(200));
+    expect(name.length).toBe(80);
+  });
+
+  it('falls back to the provided title when the entry is empty/all-stripped', () => {
+    expect(sanitizeUserFilename('   ', 'The Quadratic Formula')).toBe('The Quadratic Formula');
+    expect(sanitizeUserFilename('///', 'The Quadratic Formula')).toBe('The Quadratic Formula');
+  });
+
+  it('falls back to a constant when both name and title are empty', () => {
+    expect(sanitizeUserFilename('', '')).toBe('chat-to-pdf');
   });
 });

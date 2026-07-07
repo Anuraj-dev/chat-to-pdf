@@ -4,7 +4,7 @@
 export { sharePdf, SharingUnavailableError } from './share';
 export { printPdf } from './print';
 export { savePdf, MAX_PDF_BYTES, PdfTooLargeError, SaveFailedError } from './save';
-export { suggestFilename } from './filename';
+export { suggestFilename, sanitizeUserFilename } from './filename';
 export {
   SAF_DIRECTORY_KEY,
   SaveAccessDeniedError,

@@ -25,7 +25,7 @@ import {
   printPdf,
   savePdf,
   sharePdf,
-  suggestFilename,
+  sanitizeUserFilename,
   PdfTooLargeError,
   SaveAccessDeniedError,
   SaveFailedError,
@@ -52,6 +52,7 @@ import {
   PreviewScreen,
   HistoryScreen,
   type OutputAction,
+  type SaveAction,
 } from './src/ui';
 
 export default function App() {
@@ -199,8 +200,13 @@ export default function App() {
     [runOutput],
   );
   const saveFor = useCallback(
-    (doc: HistoryDoc): OutputAction =>
-      () => runOutput('Save', () => savePdf(doc.pdfUri, suggestFilename(doc.sourceMarkdown))),
+    (doc: HistoryDoc): SaveAction =>
+      (name: string) =>
+        runOutput('Save', () =>
+          // The user-typed name is sanitized to a filesystem-safe base; an empty
+          // entry falls back to the document title.
+          savePdf(doc.pdfUri, sanitizeUserFilename(name, doc.title)),
+        ),
     [runOutput],
   );
 

@@ -20,5 +20,5 @@ export { HomeScreen } from './screens/HomeScreen';
 export { ProcessingScreen } from './screens/ProcessingScreen';
 export { ErrorScreen } from './screens/ErrorScreen';
 export { PreviewScreen } from './screens/PreviewScreen';
-export type { OutputAction } from './screens/PreviewScreen';
+export type { OutputAction, SaveAction } from './screens/PreviewScreen';
 export { HistoryScreen } from './screens/HistoryScreen';

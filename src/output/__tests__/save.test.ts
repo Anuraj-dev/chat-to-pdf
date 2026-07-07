@@ -7,6 +7,7 @@ jest.mock('expo-file-system/legacy', () => ({
     readDirectoryAsync: jest.fn(),
     createFileAsync: jest.fn(),
     writeAsStringAsync: jest.fn(),
+    getUriForDirectoryInRoot: jest.fn((name: string) => `content://tree/primary:${name}`),
   },
 }));
 

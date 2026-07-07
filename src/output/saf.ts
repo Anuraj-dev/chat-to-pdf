@@ -16,6 +16,26 @@ import { StorageAccessFramework } from 'expo-file-system/legacy';
 /** Namespaced AsyncStorage key holding the granted SAF directory URI. */
 export const SAF_DIRECTORY_KEY = 'chat-to-pdf:output:saf-directory-uri';
 
+/**
+ * SAF URI hint that pre-opens the system folder picker AT the public Documents
+ * folder on first save — so a non-technical user just taps "Use this folder" and
+ * every PDF lands somewhere any file manager surfaces (Documents/), instead of
+ * hunting for wherever the picker happened to open. Android may ignore the hint
+ * on some OEM pickers (it's best-effort), but the grant is persisted either way
+ * so the picker only appears once.
+ *
+ * Computed lazily (not at module load) and behind a try/catch: a missing/odd
+ * StorageAccessFramework build must never crash import, and a null hint just
+ * means the picker opens at its default location.
+ */
+export function documentsInitialUri(): string | undefined {
+  try {
+    return StorageAccessFramework.getUriForDirectoryInRoot('Documents');
+  } catch {
+    return undefined;
+  }
+}
+
 /** Thrown when the user dismisses/denies the system folder picker. */
 export class SaveAccessDeniedError extends Error {
   constructor() {
@@ -39,7 +59,9 @@ export async function clearDirectoryGrant(): Promise<void> {
  * @throws SaveAccessDeniedError when the user denies/dismisses the picker.
  */
 export async function requestDirectoryGrant(): Promise<string> {
-  const permission = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+  const permission = await StorageAccessFramework.requestDirectoryPermissionsAsync(
+    documentsInitialUri(),
+  );
   if (!permission.granted) {
     throw new SaveAccessDeniedError();
   }

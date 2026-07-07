@@ -22,12 +22,15 @@ import { ScreenTopBar } from '../components/TopBar';
 import { ReadyChip } from '../components/Chips';
 import { PrimaryButton, PrintButton, SecondaryButton } from '../components/Buttons';
 import { Toast } from '../components/Toast';
+import { NameDialog } from '../components/NameDialog';
 import { markdownToHtml } from '../../parse';
 import { buildDocument } from '../../render';
 import type { HistoryDoc } from '../../types';
 
 /** An async output action returns a user-facing note, or null on plain success. */
 export type OutputAction = () => Promise<string | null>;
+/** Save carries the user-chosen filename (raw text; the caller sanitizes it). */
+export type SaveAction = (name: string) => Promise<string | null>;
 
 export function PreviewScreen({
   doc,
@@ -39,10 +42,12 @@ export function PreviewScreen({
   doc: HistoryDoc;
   onBack: () => void;
   onPrint: OutputAction;
-  onSave: OutputAction;
+  onSave: SaveAction;
   onShare: OutputAction;
 }) {
   const [note, setNote] = useState<string | null>(null);
+  // Save opens a name dialog (pre-filled with the title) before writing the file.
+  const [naming, setNaming] = useState(false);
 
   // Regenerated HTML — the fallback for legacy/missing-snapshot docs and the
   // seed shown until the snapshot file loads. Memoized so a toast re-render
@@ -84,6 +89,14 @@ export function PreviewScreen({
     };
   }
 
+  const handleConfirmSave = (name: string) => {
+    setNaming(false);
+    void (async () => {
+      const message = await onSave(name);
+      if (message) setNote(message);
+    })();
+  };
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <ScreenTopBar
@@ -114,9 +127,16 @@ export function PreviewScreen({
 
       <View style={styles.actionBar}>
         <PrintButton label="Print" onPress={run(onPrint)} style={styles.print} />
-        <SecondaryButton label="Save" onPress={run(onSave)} style={styles.secondary} />
+        <SecondaryButton label="Save" onPress={() => setNaming(true)} style={styles.secondary} />
         <SecondaryButton label="Share" onPress={run(onShare)} style={styles.secondary} />
       </View>
+
+      <NameDialog
+        visible={naming}
+        defaultName={doc.title}
+        onCancel={() => setNaming(false)}
+        onConfirm={handleConfirmSave}
+      />
 
       <Toast message={note ?? ''} visible={note !== null} onHide={() => setNote(null)} />
     </SafeAreaView>
