@@ -5,13 +5,32 @@
 import { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, touch } from '../theme';
-import { Chevron, ClockIcon } from './Icons';
+import { Chevron, ClockIcon, InfoIcon } from './Icons';
 
-/** Home top bar: "CDF" wordmark left, "History" text-icon button right. */
-export function HomeTopBar({ onHistory }: { onHistory: () => void }) {
+/**
+ * Home top bar: "CDF" wordmark left; an About/Updates info button then the
+ * "History" text-icon button on the right. `onAbout` opens the update sheet.
+ */
+export function HomeTopBar({
+  onHistory,
+  onAbout,
+}: {
+  onHistory: () => void;
+  onAbout: () => void;
+}) {
   return (
     <View style={styles.bar}>
       <Text style={styles.wordmark}>CDF</Text>
+      <Pressable
+        onPress={onAbout}
+        accessibilityRole="button"
+        accessibilityLabel="About and updates"
+        android_ripple={null}
+        style={({ pressed }) => [styles.aboutBtn, pressed && styles.pressed]}
+        hitSlop={8}
+      >
+        <InfoIcon size={20} color={colors.inkSoft} />
+      </Pressable>
       <Pressable
         onPress={onHistory}
         accessibilityRole="button"
@@ -86,6 +105,12 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     marginLeft: 16,
     flex: 1,
+  },
+  aboutBtn: {
+    minHeight: touch.min,
+    width: touch.min,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   historyBtn: {
     minHeight: touch.min,

@@ -20,6 +20,7 @@ import { PasteBox } from '../components/PasteBox';
 import { PrimaryButton } from '../components/Buttons';
 import { Toast } from '../components/Toast';
 import { HelperSheet } from '../components/HelperSheet';
+import { UpdateSheet } from '../components/UpdateSheet';
 import { pageEstimateLabel } from '../format';
 import type { AiId } from '../../capture/helperPrompts';
 
@@ -49,11 +50,14 @@ export function HomeScreen({
 }) {
   const [toast, setToast] = useState(false);
   const [helperOpen, setHelperOpen] = useState(false);
+  // Self-contained update sheet (spec 0002) — local state, no App.tsx changes,
+  // mirroring the helper sheet above.
+  const [updateOpen, setUpdateOpen] = useState(false);
   const canMake = text.trim().length > 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-      <HomeTopBar onHistory={onOpenHistory} />
+      <HomeTopBar onHistory={onOpenHistory} onAbout={() => setUpdateOpen(true)} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -94,6 +98,7 @@ export function HomeScreen({
         onClose={() => setHelperOpen(false)}
         onCopy={onCopyHelperPrompt}
       />
+      <UpdateSheet visible={updateOpen} onClose={() => setUpdateOpen(false)} />
     </SafeAreaView>
   );
 }

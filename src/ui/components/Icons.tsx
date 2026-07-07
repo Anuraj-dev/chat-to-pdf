@@ -66,6 +66,46 @@ export function ClockIcon({ size = 18, color = colors.inkSoft }: { size?: number
   );
 }
 
+/** An outlined info glyph: circle with a dot + stem (used for the About entry). */
+export function InfoIcon({ size = 18, color = colors.inkSoft }: { size?: number; color?: string }) {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        borderWidth: 2,
+        borderColor: color,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* dot */}
+      <View
+        style={{
+          width: 2,
+          height: 2,
+          borderRadius: 1,
+          backgroundColor: color,
+          marginTop: size * 0.12,
+        }}
+      />
+      {/* stem */}
+      <View
+        style={{
+          width: 2,
+          height: size * 0.34,
+          borderRadius: 1,
+          backgroundColor: color,
+          marginTop: size * 0.06,
+        }}
+      />
+    </View>
+  );
+}
+
 /** A check mark drawn as an L rotated 45° (short + long stroke). */
 export function Check({ size = 14, color = colors.printGreen, thickness = 2.5 }: {
   size?: number;
