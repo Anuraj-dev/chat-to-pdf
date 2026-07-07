@@ -72,3 +72,6 @@
 
 ## 2026-07-07 — Print quality + capture UX are research-backed issues, not folklore
 **Why:** Sonnet research distilled into issue #10 (exact print stylesheet spec + verified Android WebView print constraints — no page counters possible) and #11 (per-AI "get full answer" prompts with four-tilde outer fence + parser hardening). These are the spec for #5's CSS and #4's parser edge cases; alternative (improvise during implementation) rejected — quality bar is 9.5/10.
+
+## 2026-07-07 — Preview renders a persisted HTML snapshot, not the PDF bytes
+**Why:** Expo Go has no PDF viewer (react-native-pdf needs a dev-client — locked NO). Regenerating HTML at view time (rejected) would drift from the saved PDF when render logic changes; so saveDocument persists the exact HTML fed to expo-print (htmlUri file next to the PDF) and Preview shows that, with regeneration only as legacy fallback.
