@@ -37,10 +37,19 @@ body {
 /* Prose root: cap the measure to ~66–75 chars so long paragraphs don't run the
    full page width (issue #10 defect #7). em-relative so it tracks font-size.
    Georgia's average advance is ~0.48em/char, so 34em ≈ 71 chars — inside the
-   66–75 target. (40em ≈ 83 chars overshot the spec's upper bound.) */
+   66–75 target. (40em ≈ 83 chars overshot the spec's upper bound.)
+
+   CENTER the column (field bug, 2026-07-07): capping max-width alone left the
+   column pinned to the left, so pages looked lopsided with a wide dead zone on
+   the right. margin:auto centres the measure between the @page margins. Text
+   inside stays left-aligned (ragged right) — NO justify: the WebView print
+   engine has no reliable hyphenation, so justification opens ugly rivers. */
 .doc {
   display: block;
   max-width: 34em;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
 }
 
 /* ---------- Type scale (~1.3 ratio, 4pt vertical rhythm) ---------- */

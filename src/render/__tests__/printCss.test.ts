@@ -82,6 +82,26 @@ describe('print.css — load-bearing rules (issue #10 quality gate)', () => {
     expect(em).toBeLessThanOrEqual(36);
   });
 
+  // ---- prose column is CENTERED, not left-hugging (field bug 2026-07-07) ----
+  it('centers the prose column with margin auto (not pinned left)', () => {
+    const doc = PRINT_CSS.match(/\.doc\s*\{[^}]*\}/);
+    expect(doc).not.toBeNull();
+    expect(doc![0]).toMatch(/margin-left:\s*auto/);
+    expect(doc![0]).toMatch(/margin-right:\s*auto/);
+  });
+
+  it('keeps prose text left-aligned / ragged-right — never justified (rivers)', () => {
+    const doc = PRINT_CSS.match(/\.doc\s*\{[^}]*\}/);
+    expect(doc![0]).toMatch(/text-align:\s*left/);
+    expect(PRINT_CSS).not.toMatch(/text-align:\s*justify/);
+  });
+
+  it('keeps block content from overflowing the centered column (tables/code/img 100%)', () => {
+    expect(PRINT_CSS).toMatch(/table\s*\{[^}]*width:\s*100%/);
+    expect(PRINT_CSS).toMatch(/img\s*\{[^}]*max-width:\s*100%/);
+    expect(PRINT_CSS).toMatch(/\.katex-display\s*\{[^}]*max-width:\s*100%/);
+  });
+
   // ---- body typography (issue #10: serif, 10.5–11pt, lh 1.45) ----
   it('sets the body size inside the 10.5–11pt band with line-height 1.45', () => {
     const body = PRINT_CSS.match(/body\s*\{[^}]*\}/);
