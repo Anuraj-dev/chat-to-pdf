@@ -20,7 +20,7 @@ import { deleteAsync } from 'expo-file-system/legacy';
 
 import { markdownToHtml } from './src/parse';
 import { renderToPdf } from './src/render';
-import { useCapture } from './src/capture';
+import { useCapture, writeClipboard, getHelperPrompt } from './src/capture';
 import {
   printPdf,
   savePdf,
@@ -274,6 +274,7 @@ export default function App() {
           onAcceptSuggestion={capture.acceptSuggestion}
           onMakePdf={() => startPipeline('START_PROCESSING')}
           onOpenHistory={() => dispatch({ type: 'OPEN_HISTORY' })}
+          onCopyHelperPrompt={(id) => writeClipboard(getHelperPrompt(id))}
         />
       );
       break;

@@ -7,7 +7,9 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
+  Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,7 +19,9 @@ import { ClipboardBanner } from '../components/ClipboardBanner';
 import { PasteBox } from '../components/PasteBox';
 import { PrimaryButton } from '../components/Buttons';
 import { Toast } from '../components/Toast';
+import { HelperSheet } from '../components/HelperSheet';
 import { pageEstimateLabel } from '../format';
+import type { AiId } from '../../capture/helperPrompts';
 
 const EMPTY_HELPER =
   'Paste some text first — tap and hold the box, then tap Paste.';
@@ -30,6 +34,7 @@ export function HomeScreen({
   onAcceptSuggestion,
   onMakePdf,
   onOpenHistory,
+  onCopyHelperPrompt,
 }: {
   text: string;
   onChangeText: (t: string) => void;
@@ -38,8 +43,12 @@ export function HomeScreen({
   onAcceptSuggestion: () => void;
   onMakePdf: () => void;
   onOpenHistory: () => void;
+  /** Copy the "get the full answer" prompt for the picked AI (issue #11).
+   *  Resolves false when the clipboard write fails — the sheet shows a retry. */
+  onCopyHelperPrompt: (id: AiId) => Promise<boolean>;
 }) {
   const [toast, setToast] = useState(false);
+  const [helperOpen, setHelperOpen] = useState(false);
   const canMake = text.trim().length > 0;
 
   return (
@@ -59,6 +68,16 @@ export function HomeScreen({
             onClear={onClear}
             pageLabel={pageEstimateLabel(text)}
           />
+          <Pressable
+            onPress={() => setHelperOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Get better results"
+            android_ripple={null}
+            hitSlop={8}
+            style={({ pressed }) => [styles.helperLink, pressed && styles.helperLinkPressed]}
+          >
+            <Text style={styles.helperLinkText}>Get better results</Text>
+          </Pressable>
           <PrimaryButton
             label="Make PDF"
             onPress={onMakePdf}
@@ -70,6 +89,11 @@ export function HomeScreen({
         </View>
       </KeyboardAvoidingView>
       <Toast message={EMPTY_HELPER} visible={toast} onHide={() => setToast(false)} />
+      <HelperSheet
+        visible={helperOpen}
+        onClose={() => setHelperOpen(false)}
+        onCopy={onCopyHelperPrompt}
+      />
     </SafeAreaView>
   );
 }
@@ -85,4 +109,18 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   cta: { marginTop: 0 },
+  helperLink: {
+    alignSelf: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  helperLinkPressed: { opacity: 0.6 },
+  helperLinkText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '600',
+    color: colors.trustBlue,
+    textAlign: 'center',
+  },
 });

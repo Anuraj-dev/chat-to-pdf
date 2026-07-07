@@ -5,9 +5,17 @@ export { cleanCapturedText, looksLikeMarkdown } from './cleanText';
 export {
   readClipboard,
   readClipboardWithRetry,
+  writeClipboard,
   CLIPBOARD_READ_DELAY_MS,
   CLIPBOARD_RETRY_DELAY_MS,
 } from './clipboard';
+export {
+  AI_OPTIONS,
+  HELPER_INSTRUCTION,
+  HELPER_PROMPTS,
+  getHelperPrompt,
+} from './helperPrompts';
+export type { AiId, AiOption } from './helperPrompts';
 export { useCapture } from './useCapture';
 export type { UseCapture } from './useCapture';
 export {

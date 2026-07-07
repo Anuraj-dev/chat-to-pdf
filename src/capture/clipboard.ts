@@ -20,6 +20,21 @@ export async function readClipboard(): Promise<string | null> {
   }
 }
 
+/**
+ * Write plain text to the clipboard (used by the "Get the full answer" helper —
+ * issue #11 — to copy a ready-made prompt with one tap).
+ *
+ * Returns `true` on success, `false` if the write is denied or fails — callers
+ * get a single boolean instead of an exception to reason about.
+ */
+export async function writeClipboard(text: string): Promise<boolean> {
+  try {
+    return await Clipboard.setStringAsync(text);
+  } catch {
+    return false;
+  }
+}
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Default delay before the first read after a foreground transition (ms). */

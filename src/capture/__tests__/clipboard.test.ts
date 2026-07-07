@@ -5,15 +5,20 @@ import {
   CLIPBOARD_RETRY_DELAY_MS,
   readClipboard,
   readClipboardWithRetry,
+  writeClipboard,
 } from '../clipboard';
 import * as Clipboard from 'expo-clipboard';
 
 jest.mock('expo-clipboard', () => ({
   getStringAsync: jest.fn(),
+  setStringAsync: jest.fn(),
 }));
 
 const mockGet = Clipboard.getStringAsync as jest.MockedFunction<
   typeof Clipboard.getStringAsync
+>;
+const mockSet = Clipboard.setStringAsync as jest.MockedFunction<
+  typeof Clipboard.setStringAsync
 >;
 
 describe('readClipboard', () => {
@@ -37,6 +42,21 @@ describe('readClipboard', () => {
   it('returns null when the read is denied / throws', async () => {
     mockGet.mockRejectedValue(new Error('permission denied'));
     await expect(readClipboard()).resolves.toBeNull();
+  });
+});
+
+describe('writeClipboard', () => {
+  beforeEach(() => mockSet.mockReset());
+
+  it('writes the text and returns true on success', async () => {
+    mockSet.mockResolvedValue(true);
+    await expect(writeClipboard('a prompt')).resolves.toBe(true);
+    expect(mockSet).toHaveBeenCalledWith('a prompt');
+  });
+
+  it('returns false when the write is denied / throws', async () => {
+    mockSet.mockRejectedValue(new Error('denied'));
+    await expect(writeClipboard('x')).resolves.toBe(false);
   });
 });
 

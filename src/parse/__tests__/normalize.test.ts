@@ -120,3 +120,100 @@ describe('normalizeInput — ChatGPT quirks (issue #11)', () => {
     expect(normalizeInput(input)).toBe('$$\nE = mc^2\n$$');
   });
 });
+
+// End-to-end fixtures: a realistic full paste from each AI after the user runs
+// the issue #11 helper prompt, exercising that AI's known quirks together.
+describe('normalizeInput — per-AI fixture pastes (issue #11 helper flow)', () => {
+  it('ChatGPT: four-tilde wrapper + stray pre/postamble + \\$ escapes + \\( \\) math + inner ``` fence', () => {
+    const input = [
+      'Sure! Here is the full answer:', // stray preamble
+      '~~~~',
+      '# Roots',
+      '',
+      'The cost was \\$5. The formula is \\(x^2 + 1\\).',
+      '',
+      '$$',
+      'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}',
+      '$$',
+      '',
+      '```python',
+      'print("$5")',
+      '```',
+      '~~~~',
+      'Hope this helps!', // stray postamble
+    ].join('\n');
+    const expected = [
+      '# Roots',
+      '',
+      'The cost was $5. The formula is $x^2 + 1$.',
+      '',
+      '$$',
+      'x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}',
+      '$$',
+      '',
+      '```python',
+      'print("$5")', // inner code fence untouched
+      '```',
+    ].join('\n');
+    expect(normalizeInput(input)).toBe(expected);
+  });
+
+  it('Gemini: four-tilde wrapper with an inner fenced table survives', () => {
+    const input = [
+      '~~~~',
+      '## Data',
+      '',
+      '| a | b |',
+      '| - | - |',
+      '| 1 | 2 |',
+      '',
+      '```js',
+      'const x = 1;',
+      '```',
+      '~~~~',
+    ].join('\n');
+    const expected = [
+      '## Data',
+      '',
+      '| a | b |',
+      '| - | - |',
+      '| 1 | 2 |',
+      '',
+      '```js',
+      'const x = 1;',
+      '```',
+    ].join('\n');
+    expect(normalizeInput(input)).toBe(expected);
+  });
+
+  it('Claude: four-backtick wrapper preserves inner triple-backtick blocks', () => {
+    const input = [
+      '````',
+      '# Answer',
+      '',
+      'Inline math $a^2$ and a block:',
+      '',
+      '```ts',
+      'type T = number;',
+      '```',
+      '````',
+    ].join('\n');
+    const expected = [
+      '# Answer',
+      '',
+      'Inline math $a^2$ and a block:',
+      '',
+      '```ts',
+      'type T = number;',
+      '```',
+    ].join('\n');
+    expect(normalizeInput(input)).toBe(expected);
+  });
+
+  it('Other/Generic: no wrapper at all, delimiters still normalized', () => {
+    const input = 'Given \\[E = mc^2\\], the energy \\(E\\) is large.';
+    expect(normalizeInput(input)).toBe(
+      'Given $$E = mc^2$$, the energy $E$ is large.',
+    );
+  });
+});
