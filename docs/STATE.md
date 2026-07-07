@@ -1,42 +1,41 @@
 # chat-to-pdf — State
-> Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-07 08:53 (morning session, Raja awake)
+> Android-first Expo app: turns AI chat answers into clean, printable PDFs (on-device). · Last checkpoint: 2026-07-07 14:46 (afternoon session)
 
 ## 🚧 In progress / next
-- **All build issues (#3–#11) DONE.** On-device smoke test running (Sonnet over adb). Then **Phase 3: EAS preview build → adb install → E2E**.
-- **Phase 3 blocker (ACTIVE)**: `EXPO_TOKEN` unset AND `npx eas-cli whoami` = Not logged in. Raja must run `npx eas-cli login` (asked in chat). Note: bare `npx eas` fails — the package is `eas-cli`.
-- **Push policy**: commits land on `main` locally, pushed to branch **`overnight-build`**. Raja: fast-forward `origin/main` to `overnight-build`.
-- Issue #1 (PRD) is the only open issue — docs-only, not a build blocker.
+- **All build issues (#3–#11) DONE + 3 UX commits this session** (code cards, PDF naming, Documents save). All on `main` **local, NOT pushed** (see Gotchas — push is intentionally held pending the GitHub email fix).
+- **ACTION on Raja (GitHub, one-time):** commits are authored correctly as `Anuraj Jit Saikia <rajasaikia1644@gmail.com>` but that email is on the empty **Anuraj-Jit-Saikia** GitHub account, so commits show under the wrong avatar. Fix = remove that email from Anuraj-Jit-Saikia, add+verify it on **Anuraj-dev**. Then push (attribution re-maps retroactively).
+- **Phase 3 (still open)**: EAS preview build → adb install → E2E. Blocker: `EXPO_TOKEN` unset AND `npx eas-cli whoami` = Not logged in → Raja must `npx eas-cli login`. (`npx eas` fails — pkg is `eas-cli`.)
+- Issue #1 (PRD) is the only open GitHub issue — docs-only.
 
 ## Status
-- #3 scaffold, #4 parse (markdown→HTML + static KaTeX, hardened normalization), #5 render (A4 expo-print), #6 capture (paste box + clipboard suggest), #7 output (share/print/SAF save), #8 storage (AsyncStorage history + durable PDF copies): DONE, committed, closed.
-- **#9 UI screens DONE (e337bf4 lineage, commit 4b79074)**: full src/ui layer (theme, navReducer, 6 screens, components) per design/DESIGN-SPEC.md. Codex-reviewed; 4 findings fixed: in-flight guard (double-tap), cancel-safe pipeline (gen-token checks around saveDocument + temp cleanup), Preview shows persisted HTML snapshot (htmlUri on HistoryDoc; file next to PDF, not in AsyncStorage JSON), pageCount threaded from expo-print numberOfPages → subtitle + §1e page indicator.
-- **#10 print quality gate DONE (6bc0b69)**: stylesheet already matched spec from #5 work; fixed measure 40em→34em (~71 chars, in 66–75 band); +13 gate tests locking type scale/break rules/code/table/blockquote/hr.
-- **#11 capture helper DONE (e337bf4)**: prompts-as-data (src/capture/helperPrompts.ts, verbatim from issue incl. \\( escapes), HelperSheet bottom sheet (picker → copied confirmation), writeClipboard wrapper. Codex-reviewed; 2 findings fixed: copy failure → retry message (never false success), sheet maxHeight 70% + ScrollView. Parser hardening was already complete since #4 — added per-AI fixture tests.
-- Suite: **248 tests / 19 suites green**, tsc clean.
+- #3–#8 pipeline (scaffold/parse/render/output/storage), #9 UI screens, #10 print gate, #11 capture helper: DONE, committed.
+- **NEW — code cards (629cbc1)**: fenced/indented code → carded `.codeblock` (header bar: gray dots + language label, over a highlighted body). JetBrains Mono embedded woff2 (SIL OFL) via `scripts/embed-code-font.js`. highlight.js/lib/common at PARSE time (Hermes-safe, no JS at print). Grayscale-safe theme. Verified in Chromium + on-device bundle.
+- **NEW — PDF naming + Documents (c4fdca9)**: Save opens a "Name your PDF" dialog pre-filled with the title (`NameDialog.tsx`); typed name sanitized by `sanitizeUserFilename`. SAF picker pre-seeded to Documents (`getUriForDirectoryInRoot`, lazy). Verified on-device: file at `/sdcard/Documents/<name>.pdf`.
+- **NEW — app.json (ba36923)**: EAS project link (owner `anurajjit` + projectId).
+- Suite: **282 tests / 20 suites green**, tsc clean.
 
 ## Architecture map
-- Pipeline: Capture → Parse → Render → Output/Store. `App.tsx` (nav + flow state, hand-rolled navReducer) + `src/{capture,parse,render,output,storage,types,ui}` — spec 0001 §4.
-- `src/ui/`: theme.ts, navigation.ts, onboarding.ts, helperSheet.ts (pure logic), components/, screens/.
-- renderToPdf returns `{ uri, pageCount, html }`; saveDocument persists PDF + HTML snapshot (`htmlUri`) into document dir.
-- Design source of truth: `design/DESIGN-SPEC.md`. Spike learnings: `spike/FINDINGS.md`, `spike/DEVICE-FINDINGS.md`.
+- Pipeline: Capture → Parse → Render → Output/Store. `App.tsx` (nav + flow) + `src/{capture,parse,render,output,storage,types,ui}` — spec 0001 §4.
+- Code render: `src/parse/markdownToHtml.ts` (`renderCodeBlock` + highlight.js) → `.codeblock` CSS in `src/render/print.css.ts`; font in `src/render/codeFont/codeFontCss.ts` (generated, injected by `template.ts`).
+- Save/naming: `src/output/{saf,save,filename}.ts` + `src/ui/components/NameDialog.tsx` + `PreviewScreen` (SaveAction carries the filename).
+- Design source: `design/DESIGN-SPEC.md`. Spikes: `spike/FINDINGS.md`, `spike/DEVICE-FINDINGS.md`.
 
 ## Stack & run
-- Expo SDK 54 (PINNED — phone's Expo Go 54.0.8) + TS. markdown-it + @vscode/markdown-it-katex + katex; expo-print/file-system/sharing/clipboard; AsyncStorage; react-native-safe-area-context; react-native-webview (Preview HTML snapshot). No router.
-- Run: `npx expo start` · Test: `npm test` (248) · Types: `npm run typecheck` · Health: `npx expo-doctor`.
-- Phone: Motorola Edge 60 Fusion, serial ZN42274J4F, adb USB OK, screen awake (`adb shell svc power stayon true`).
-- **Device launch: adb reverse broken — use LAN `exp://<LAN_IP>:8081`** after `am force-stop host.exp.exponent`.
+- Expo SDK 54 + TS. markdown-it + KaTeX + **highlight.js** (parse-time highlight) + **@fontsource/jetbrains-mono** (devDep, author-time embed). expo-print/file-system(SAF)/sharing/clipboard; AsyncStorage; react-native-webview. No router.
+- Run: `npx expo start` · Test: `npm test` (282) · Types: `npm run typecheck` · Regen fonts: `npm run embed:codefont` / `embed:katex`.
+- Phone: Motorola Edge 60 Fusion, serial ZN42274J4F, adb USB OK. Device launch: adb reverse broken — use LAN `exp://192.168.0.100:8081` after `am force-stop host.exp.exponent`.
 
 ## Key decisions (top 6)
-- On-device render via HTML/CSS → expo-print (FINAL). Storage v0 = AsyncStorage. No backend/auth.
-- Preview shows the persisted **HTML snapshot** (not PDF bytes) — Expo Go has no PDF viewer; snapshot saved at render time so history reopen never drifts from the saved PDF.
-- NO expo-dev-client — dev = Expo Go, ship = EAS preview APK. NO routers (hand-rolled navReducer).
-- PDF (and HTML snapshot) saved to History BEFORE Preview shows. Dark mode out of scope v0.
-- Codex review gate on substantial diffs (#9: 4 findings, #11: 2 findings — all fixed); small diffs (#10) driver-verified only.
-- Workflow: commit-per-issue on main (local) + push to overnight-build.
+- On-device render HTML/CSS → expo-print (FINAL). Storage v0 = AsyncStorage. No backend/auth.
+- Code highlighting baked to static HTML at PARSE time (highlight.js/lib/common) — never at print time; grayscale-safe theme (weight/italic, not hue).
+- Code font = JetBrains Mono, embedded base64 woff2 (same pattern as KaTeX); ligatures OFF.
+- Save flow: user names the PDF (default = title); saved to public Documents via a one-time SAF grant (pre-seeded), persisted.
+- Preview shows persisted HTML snapshot; PDF saved to History BEFORE Preview. Dark mode out of scope v0.
+- Workflow: commit-per-feature on main (local). Push held until the GitHub email attribution is fixed.
 
 ## Gotchas
-- Android WebView print: no @page margin boxes/page counters (OS-level, v0 out of scope); break-inside:avoid works; orphans/widows unreliable; portrait only.
-- jest-expo must stay ~54.x; @types/jest pinned v29. Repo tests are pure-logic only — no JSX render harness (deliberate; don't add one casually).
-- helperPrompts.ts: backslash escapes are load-bearing (`\\(` in source → `\(` on clipboard) — tests lock the exact strings.
-- EAS free tier 15 builds/mo — build budget this session: max 3.
-- `npx eas` fails (wrong pkg name) — use `npx eas-cli`.
+- **Don't put backticks inside the `PRINT_CSS` template literal** — they close the string (bit me twice this session).
+- Code CSS: header bar padding lives on the CELLS not the `display:table` (table width:100% is content-box → table padding overflows the card and `overflow:hidden` clips the language label).
+- SAF Documents seed is best-effort (some OEM pickers ignore the hint); grant is persisted either way so the picker only shows once. `documentsInitialUri()` is lazy + try/catch so module load never touches SAF (tests mock `getUriForDirectoryInRoot`).
+- Android WebView print: no @page margin boxes/counters; break-inside:avoid works; portrait only.
+- helperPrompts.ts backslash escapes are load-bearing. jest-expo ~54.x; @types/jest v29. EAS free tier 15 builds/mo (max 3/session). `npx eas` fails — use `npx eas-cli`.

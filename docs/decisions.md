@@ -75,3 +75,12 @@
 
 ## 2026-07-07 — Preview renders a persisted HTML snapshot, not the PDF bytes
 **Why:** Expo Go has no PDF viewer (react-native-pdf needs a dev-client — locked NO). Regenerating HTML at view time (rejected) would drift from the saved PDF when render logic changes; so saveDocument persists the exact HTML fed to expo-print (htmlUri file next to the PDF) and Preview shows that, with regeneration only as legacy fallback.
+
+## 2026-07-07 — Code blocks: syntax-highlighted cards, highlight at parse time, JetBrains Mono embedded
+**Why:** Raja judged the plain boxy code blocks ugly vs ChatGPT/Claude. Chose a carded design (header bar + language label) with highlight.js run at PARSE time (baked to static HTML — expo-print's Android WebView runs no JS at print, same constraint as KaTeX) over Shiki (needs WASM; Hermes has none). Font = JetBrains Mono embedded as base64 woff2 (code-legibility: dotted zero, distinct 1/l/I) via an author-time generator mirroring embed-katex-css.js. Theme is grayscale-safe (weight/italic carry meaning, not hue) because many users print mono. Rejected: runtime highlighting, hue-based themes, red/yellow/green window dots (false status signal in grayscale).
+
+## 2026-07-07 — Save: user-named PDF, default to public Documents via one-time SAF grant
+**Why:** Non-technical end-user (Raja's sister) couldn't find or title PDFs. Save now prompts for a name (default = doc title) and targets the public Documents folder. On modern Android a managed Expo app CANNOT silently write Documents — chose the SAF folder picker pre-seeded to Documents (getUriForDirectoryInRoot) with the grant persisted, so the picker appears once then every save is silent. Rejected: MediaLibrary (media collections only, not Documents), direct WRITE_EXTERNAL_STORAGE (blocked by scoped storage on Android 11+), app-private external dir (buried, non-technical users won't find it).
+
+## 2026-07-07 — Hold the push until GitHub commit attribution is fixed
+**Why:** Commits are authored correctly (Anuraj Jit Saikia <rajasaikia1644@gmail.com>) but that email is registered on the empty Anuraj-Jit-Saikia GitHub account, so GitHub shows commits under the wrong avatar instead of Anuraj-dev (repo owner). Fix is a GitHub email-settings action only Raja can do (move+verify the email to Anuraj-dev); GitHub then re-attributes retroactively. Holding the push so pushed commits land under the right account. NOT a git-config change — the local identity stays as-is.
