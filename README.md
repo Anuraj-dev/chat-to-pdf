@@ -100,3 +100,7 @@ Each GitHub release needs exactly one `.apk` asset and one `.apk.sha256` asset, 
 - [Decisions](docs/decisions.md) and [conventions](docs/conventions.md)
 - [UI design spec](design/DESIGN-SPEC.md)
 - [Render spike](spike/FINDINGS.md) and [on-device spike](spike/DEVICE-FINDINGS.md)
+
+## License
+
+MIT. See [LICENSE](LICENSE).
