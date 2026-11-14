@@ -32,7 +32,7 @@ It is an Expo app written in TypeScript on React Native, pinned to Expo SDK 54. 
 - **Page counts read from the file.** The page count comes from the PDF bytes. The number that expo-print reports is only a fallback, because on Android it can be far off.
 - **History that outlives the cache.** Each PDF is copied into the app's document folder, along with an HTML snapshot for Preview. The history keeps the 100 most recent documents, and deleting one removes its files.
 - **Print, share or save.** Print opens the system print dialog, and Share opens the share sheet. Save writes into a folder you choose once, and the picker opens at Documents when Android allows it. Files over 25 MB can be shared or printed, but not saved.
-- **A prompt for the whole conversation.** "Get better results" copies a prompt for ChatGPT, Gemini, Claude or another app. It asks the AI to send every answer, with later corrections applied, as one Markdown document inside a single fenced block.
+- **A prompt for the whole conversation.** "Get better results" copies a prompt for ChatGPT, Gemini or another app. It asks the AI to send every answer, with later corrections applied, as one Markdown document inside a single fenced block.
 
 ## Installation
 
